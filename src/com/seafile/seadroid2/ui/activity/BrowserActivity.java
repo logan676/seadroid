@@ -949,10 +949,9 @@ public class BrowserActivity extends SherlockFragmentActivity
             return;
         }
 
-        String fileName = direntName;
         final String repoName = navContext.getRepoName();
         final String repoID = navContext.getRepoID();
-        final String filePath = Utils.pathJoin(navContext.getDirPath(), fileName);
+        final String filePath = Utils.pathJoin(navContext.getDirPath(), direntName);
         ConcurrentAsyncTask.execute(new DownloadDirTask(), repoName, repoID, filePath);
         // Log.d(DEBUG_TAG, "download >> " + repoName + navContext.getDirPath());
 

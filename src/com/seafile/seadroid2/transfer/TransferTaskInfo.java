@@ -2,12 +2,11 @@ package com.seafile.seadroid2.transfer;
 
 import com.seafile.seadroid2.SeafException;
 import com.seafile.seadroid2.account.Account;
-import com.seafile.seadroid2.transfer.TransferManager.TaskState;
 
 /*
- *  base class for {@link DownloadTaskInfo} and {@link UploadTaskInfo}
+ *  Base class
  */
-public class TransferTaskInfo{
+public class TransferTaskInfo {
     public final Account account;
     public final int taskID;
     public final TaskState state;
@@ -17,7 +16,7 @@ public class TransferTaskInfo{
     public final SeafException err;
 
     /**
-     * Construct a Transfer Task Info instance
+     * Constructor
      *
      * @param account Current login Account instance
      * @param taskID TransferTask id
