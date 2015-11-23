@@ -264,27 +264,25 @@ public class CameraSyncAdapter extends AbstractThreadedSyncAdapter {
             return;
 
         // we only want media added since the last complete sync
-        String selection = MediaStore.Images.ImageColumns.DATE_ADDED + " > ?";
+        String selection = "";
         String[] selectionArgs;
 
         if (bucketList.size() > 0) {
             // also we only want media in one of the selected buckets...
-            selectionArgs = new String[bucketList.size() + 1];
-            selectionArgs[0] = Long.toString(settingsMgr.getCameraUploadSyncStampImage());
+            selectionArgs = new String[bucketList.size()];
 
             String questionmarkList = "";
             for (int i = 0; i < bucketList.size(); i++) {
-                selectionArgs[i + 1] = bucketList.get(i);
+                selectionArgs[i] = bucketList.get(i);
                 questionmarkList += "?,";
             }
             questionmarkList = questionmarkList.substring(0, questionmarkList.length() - 1); // remove last ","
-            selection += " AND " + MediaStore.Images.ImageColumns.BUCKET_ID + " IN (" + questionmarkList + ")";
+            selection += MediaStore.Images.ImageColumns.BUCKET_ID + " IN (" + questionmarkList + ")";
         } else {
             // ...or only from the Camera bucket
-            selectionArgs = new String[2];
-            selectionArgs[0] = Long.toString(settingsMgr.getCameraUploadSyncStampImage());
-            selectionArgs[1] = CAMERA_BUCKET_NAME;
-            selection += " AND " + MediaStore.Images.Media.BUCKET_DISPLAY_NAME + " = ?";
+            selectionArgs = new String[1];
+            selectionArgs[0] = CAMERA_BUCKET_NAME;
+            selection += MediaStore.Images.Media.BUCKET_DISPLAY_NAME + " = ?";
         }
 
         // fetch all new images from the ContentProvider since our last sync
@@ -330,27 +328,25 @@ public class CameraSyncAdapter extends AbstractThreadedSyncAdapter {
 
 
         // we only want media added since the last complete sync
-        String selection = MediaStore.Video.VideoColumns.DATE_ADDED + " > ?";
+        String selection = "";
         String[] selectionArgs;
 
         if (bucketList.size() > 0) {
             // also we only want media in one of the selected buckets...
-            selectionArgs = new String[bucketList.size() + 1];
-            selectionArgs[0] = Long.toString(settingsMgr.getCameraUploadSyncStampVideo());
+            selectionArgs = new String[bucketList.size()];
 
             String questionmarkList = "";
             for (int i = 0; i < bucketList.size(); i++) {
-                selectionArgs[i + 1] = bucketList.get(i);
+                selectionArgs[i] = bucketList.get(i);
                 questionmarkList += "?,";
             }
             questionmarkList = questionmarkList.substring(0, questionmarkList.length() - 1); // remove last ","
-            selection += " AND " + MediaStore.Video.VideoColumns.BUCKET_ID + " IN (" + questionmarkList + ")";
+            selection += MediaStore.Video.VideoColumns.BUCKET_ID + " IN (" + questionmarkList + ")";
         } else {
             // ...or only from the Camera bucket
-            selectionArgs = new String[2];
-            selectionArgs[0] = Long.toString(settingsMgr.getCameraUploadSyncStampVideo());
-            selectionArgs[1] = CAMERA_BUCKET_NAME;
-            selection += " AND " + MediaStore.Video.Media.BUCKET_DISPLAY_NAME + " = ?";
+            selectionArgs = new String[1];
+            selectionArgs[0] = CAMERA_BUCKET_NAME;
+            selection += MediaStore.Video.Media.BUCKET_DISPLAY_NAME + " = ?";
         }
 
         // fetch all new videos from the ContentProvider since our last sync
