@@ -3,6 +3,7 @@ package com.seafile.seadroid2.data;
 import android.os.Environment;
 import android.util.Log;
 import android.util.Pair;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.seafile.seadroid2.R;
@@ -12,24 +13,45 @@ import com.seafile.seadroid2.SeafException;
 import com.seafile.seadroid2.account.Account;
 import com.seafile.seadroid2.account.AccountInfo;
 import com.seafile.seadroid2.util.Utils;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.KeySpec;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
+
 public class DataManager {
     private static final String DEBUG_TAG = "DataManager";
     private static final long SET_PASSWORD_INTERVAL = 59 * 60 * 1000; // 59 min
     // private static final long SET_PASSWORD_INTERVAL = 5 * 1000; // 5s
+
+    public static final String PKCS12_DERIVATION_ALGORITHM = "PBEWITHSHA256AND256BITAES-CBC-BC";
+    public static final String PBKDF2_DERIVATION_ALGORITHM = "PBKDF2WithHmacSHA1";
+
+    private static int KEY_LENGTH = 256;
+    // minimum values recommended by PKCS#5, increase as necessary
+    private static int ITERATION_COUNT = 1000;
+    private static final int PKCS5_SALT_LENGTH = 8;
 
     // pull to refresh
     public static final String PULL_TO_REFRESH_LAST_TIME_FOR_REPOS_FRAGMENT = "repo fragment last update";
@@ -74,6 +96,12 @@ public class DataManager {
     public static String getThumbDirectory() {
         String root = SeadroidApplication.getAppContext().getCacheDir().getAbsolutePath();
         File tmpDir = new File(root + "/" + "thumb");
+        return getDirectoryCreateIfNeeded(tmpDir);
+    }
+
+    public static String getChunkDirectory() {
+        String root = SeadroidApplication.getAppContext().getCacheDir().getAbsolutePath();
+        File tmpDir = new File(root + "/" + "chunk");
         return getDirectoryCreateIfNeeded(tmpDir);
     }
 
@@ -855,5 +883,139 @@ public class DataManager {
         } catch (JSONException e) {
             return null;
         }
+    }
+
+    public static SecretKey deriveKeyPkcs12(byte[] salt, String password) {
+        try {
+            long start = System.currentTimeMillis();
+            KeySpec keySpec = new PBEKeySpec(password.toCharArray(), salt, ITERATION_COUNT, KEY_LENGTH);
+            SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(PKCS12_DERIVATION_ALGORITHM);
+            SecretKey result = keyFactory.generateSecret(keySpec);
+            long elapsed = System.currentTimeMillis() - start;
+            Log.d(DEBUG_TAG, String.format("PKCS#12 key derivation took %d [ms].", elapsed));
+
+            return result;
+        } catch (GeneralSecurityException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static SecretKey deriveKeyPbkdf2(byte[] salt, String password) {
+        try {
+            long start = System.currentTimeMillis();
+            KeySpec keySpec = new PBEKeySpec(password.toCharArray(), salt, ITERATION_COUNT, KEY_LENGTH);
+            SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(PBKDF2_DERIVATION_ALGORITHM);
+            byte[] keyBytes = keyFactory.generateSecret(keySpec).getEncoded();
+            Log.d(DEBUG_TAG, "key bytes: " + toHex(keyBytes));
+
+            SecretKey result = new SecretKeySpec(keyBytes, "AES");
+            long elapsed = System.currentTimeMillis() - start;
+            Log.d(DEBUG_TAG, String.format("PBKDF2 key derivation took %d [ms].", elapsed));
+
+            return result;
+        } catch (GeneralSecurityException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String toHex(byte[] bytes) {
+        StringBuffer buff = new StringBuffer();
+        for (byte b : bytes) {
+            buff.append(String.format("%02X", b));
+        }
+
+        return buff.toString();
+    }
+
+    /*public File encrypt(String passwd, String encKey, int version) {
+        int kCCKeySizeAES128 = 16; // 128 bit AES key size.
+        int kCCKeySizeAES256 = 32; // 256 bit AES key size.
+
+        String[] key[kCCKeySizeAES256+1] = {0};
+        String[] iv[kCCKeySizeAES128+1];
+
+    }*/
+
+    /*public static void generateKey(String passwd, int version, String encKey, String key, String iv) {
+        String[] key0, iv0;
+        char passwordPtr[256] = {0}; // room for terminator (unused)
+
+    }*/
+
+    public boolean chunkFile(String path, List<String> blockids, List<String> paths, String passwd, SeafRepo repo) {
+        byte[] buffer = new byte[2 * 1024 * 1024];
+        final String dir = getChunkDirectory();
+        FileInputStream in = null;
+        FileOutputStream out = null;
+        int byteRead = 0; // Record how many bytes have been read
+        try {
+            in = new FileInputStream(path);
+            while ((byteRead = in.read(buffer)) != -1) {
+                MessageDigest digest = MessageDigest.getInstance("SHA-1"); // Get a SHA-1 instance
+
+                if (byteRead == 0) break;
+
+                if (byteRead > 0)
+                    digest.update(buffer, 0, byteRead); // Update the digest
+
+                byte [] sha1Bytes = digest.digest(); // Complete the hash computing
+                String blockid = convertHashToString(sha1Bytes); // Call the function to convert to hex digits
+
+                File chunk = new File(dir, blockid);
+                out = new FileOutputStream(chunk);
+                out.write(buffer, 0, byteRead);
+                if (!chunk.exists()) {
+                    break;
+                }
+
+                if (password)
+                    chunk = [chunk encrypt:password encKey:repo.encKey version:repo.encVersion];
+
+                String blockpath = chunk.getAbsolutePath();
+                Log.d(DEBUG_TAG, "Chunk file blockid=" + blockid + " blockpath=" + path + " len= " + chunk.length());
+                blockids.add(blockid);
+                paths.add(blockpath);
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return false;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } finally {
+            if (out != null) {
+                try {
+                    out.close();
+                } catch (IOException e) {
+                    return false;
+                }
+            }
+            if (in != null) {
+                try {
+                    in.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Convert the hash bytes to hex digits string
+     *
+     * @param hashBytes
+     * @return The converted hex digits string
+     */
+    private static String convertHashToString(byte[] hashBytes) {
+        String returnVal = "";
+        for (int i = 0; i < hashBytes.length; i++) {
+            returnVal += Integer.toString(( hashBytes[i] & 0xff) + 0x100, 16).substring(1);
+        }
+        return returnVal.toLowerCase();
     }
 }
