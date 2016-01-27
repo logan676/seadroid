@@ -1,4 +1,4 @@
-package com.seafile.seadroid2.cipher;
+package com.seafile.seadroid2.crypto;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -20,9 +20,9 @@ public class FileSplit {
 
         BufferedInputStream bis = null;
         FileOutputStream out = null;
+        //TODO try-with-resources to ensure closing stream
         try {
             bis = new BufferedInputStream(new FileInputStream(f));
-            // try-with-resources to ensure closing stream
             String name = f.getName();
 
             int tmp = 0;
