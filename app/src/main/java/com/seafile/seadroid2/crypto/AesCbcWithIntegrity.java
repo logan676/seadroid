@@ -22,7 +22,12 @@
  * Created by Isaac Potoczny-Jones on 11/12/14.
  */
 
-package com.seafile.seadroid2.cipher;
+package com.seafile.seadroid2.crypto;
+
+import android.os.Build;
+import android.os.Process;
+import android.util.Base64;
+import android.util.Log;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -52,11 +57,6 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
-
-import android.os.Build;
-import android.os.Process;
-import android.util.Base64;
-import android.util.Log;
 
 /**
  * Simple library for the "right" defaults for AES key generation, encryption,

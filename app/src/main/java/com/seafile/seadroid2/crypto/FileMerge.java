@@ -1,4 +1,4 @@
-package com.seafile.seadroid2.cipher;
+package com.seafile.seadroid2.crypto;
 
 import com.google.common.io.Files;
 
