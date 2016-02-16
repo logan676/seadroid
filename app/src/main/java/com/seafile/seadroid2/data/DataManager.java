@@ -477,9 +477,9 @@ public class DataManager {
      * 1. No cached dirents
      * 2. User clicks "refresh" button.
      * 3. Download all dirents within a folder
-     * 4. View starred or searched files in gallery without available local cache
+     * 4. View starred or searched files in gallery without valid local cache
      *
-     * In the second case, the local cache may still be valid.
+     * In the case 2, 3, 4, the local cache may still be valid.
      */
     public List<SeafDirent> getDirentsFromServer(String repoID, String path) throws SeafException {
 

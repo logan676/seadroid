@@ -62,8 +62,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TreeMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class Utils {
     public static final String MIME_APPLICATION_OCTET_STREAM = "application/octet-stream";
@@ -182,7 +180,7 @@ public class Utils {
                 if (os != null)
                     os.close();
             } catch (Exception e) {
-                // ignore
+                Log.e(DEBUG_TAG, e.getMessage());
             }
         }
     }
