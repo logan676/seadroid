@@ -4,9 +4,12 @@ import android.util.Base64;
 import android.util.Log;
 
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 
 import javax.crypto.Cipher;
@@ -63,6 +66,59 @@ public class Crypto {
         byte[] output = new byte[32];
         sr.nextBytes(output);
         return output;
+    }
+
+    /**
+     * 由用户给的repo_id + 密码 生成一个 magic 字符串
+     *
+     * magic 是一段 32 字节的二进制数据，通过 PBKDF2 算法由“repo_id+password”产生。
+     * 即 magic = PBKDF2(repo_id+password, salt, 1000, 32)，PBKDF2 循环次数为 1000次。
+     * salt 在 C 语言中定义为一个8字节大小的数组：{ 0xda, 0x90, 0x45, 0xc3, 0x06, 0xc7, 0xcc, 0x26 }
+     *
+     * @param password
+     * @return
+     * @throws NoSuchAlgorithmException
+     * @throws InvalidKeySpecException
+     */
+    private static String generateMagic(String password) throws NoSuchAlgorithmException, InvalidKeySpecException, UnsupportedEncodingException {
+        int iterations = 1000;
+        char[] chars = password.toCharArray();
+        char[] slt = {0xda, 0x90, 0x45, 0xc3, 0x06, 0xc7, 0xcc, 0x26};
+        final byte[] salt = new String(slt).getBytes("UTF-8");
+
+        PBEKeySpec spec = new PBEKeySpec(chars, salt , iterations, 32);
+        SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+        byte[] hash = skf.generateSecret(spec).getEncoded();
+        return iterations + ":" + toHex(salt) + ":" + toHex(hash);
+    }
+
+    private static String toHex(byte[] array) throws NoSuchAlgorithmException {
+        BigInteger bi = new BigInteger(1, array);
+        String hex = bi.toString(16);
+        int paddingLength = (array.length * 2) - hex.length();
+        if (paddingLength > 0) {
+            return String.format("%0" + paddingLength + "d", 0) + hex;
+        } else {
+            return hex;
+        }
+    }
+
+    private static boolean verifyRepoPassword(String input, String magic) throws NoSuchAlgorithmException, InvalidKeySpecException, UnsupportedEncodingException {
+        final byte[] generateMagic = generateMagic(input).getBytes();
+
+        int diff = generateMagic.length ^ magic.getBytes().length;
+        for (int i = 0; i < generateMagic.length && i < magic.getBytes().length; i++) {
+            diff |= generateMagic[i] ^ magic.getBytes()[i];
+        }
+        return diff == 0;
+    }
+
+    private static byte[] fromHex(String hex) throws NoSuchAlgorithmException {
+        byte[] bytes = new byte[hex.length() / 2];
+        for (int i = 0; i < bytes.length; i++) {
+            bytes[i] = (byte) Integer.parseInt(hex.substring(2 * i, 2 * i + 2), 16);
+        }
+        return bytes;
     }
 
     /**
@@ -177,14 +233,14 @@ public class Crypto {
     }
 
 
-    public static String toHex(byte[] bytes) {
+    /*public static String toHex(byte[] bytes) {
         StringBuffer buff = new StringBuffer();
         for (byte b : bytes) {
             buff.append(String.format("%02X", b));
         }
 
         return buff.toString();
-    }
+    }*/
 
     public static String toBase64(byte[] bytes) {
         return Base64.encodeToString(bytes, Base64.NO_WRAP);
