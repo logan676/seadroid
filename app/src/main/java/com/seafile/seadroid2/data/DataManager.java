@@ -3,6 +3,7 @@ package com.seafile.seadroid2.data;
 import android.os.Environment;
 import android.util.Log;
 import android.util.Pair;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.seafile.seadroid2.R;
@@ -12,6 +13,7 @@ import com.seafile.seadroid2.SeafException;
 import com.seafile.seadroid2.account.Account;
 import com.seafile.seadroid2.account.AccountInfo;
 import com.seafile.seadroid2.util.Utils;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -74,6 +76,12 @@ public class DataManager {
     public static String getThumbDirectory() {
         String root = SeadroidApplication.getAppContext().getCacheDir().getAbsolutePath();
         File tmpDir = new File(root + "/" + "thumb");
+        return getDirectoryCreateIfNeeded(tmpDir);
+    }
+
+    public static String getChunkDirectory() {
+        String root = SeadroidApplication.getAppContext().getCacheDir().getAbsolutePath();
+        File tmpDir = new File(root + "/" + "chunk");
         return getDirectoryCreateIfNeeded(tmpDir);
     }
 
