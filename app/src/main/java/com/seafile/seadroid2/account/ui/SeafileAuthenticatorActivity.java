@@ -111,6 +111,8 @@ public class SeafileAuthenticatorActivity extends BaseAuthenticatorActivity {
                 navigateUpOrBack(SeafileAuthenticatorActivity.this, null);
             }
         });
+        Log.d(DEBUG_TAG, "onCreate finished");
+
     }
 
     @Override
@@ -119,8 +121,11 @@ public class SeafileAuthenticatorActivity extends BaseAuthenticatorActivity {
 
         // The sign up activity returned that the user has successfully created an account
         if (requestCode == REQ_SIGNUP && resultCode == RESULT_OK) {
+            Log.d(DEBUG_TAG, "onActivityResult: ok");
+
             finishLogin(data);
         } else {
+            Log.d(DEBUG_TAG, "onActivityResult: "+requestCode+"/"+resultCode);
             finish();
         }
     }
@@ -135,16 +140,20 @@ public class SeafileAuthenticatorActivity extends BaseAuthenticatorActivity {
         String serveruri = intent.getStringExtra(ARG_SERVER_URI);
         String email = intent.getStringExtra(ARG_EMAIL);
 
+        Log.d(DEBUG_TAG, "finishLogin: "+serveruri+"/"+email);
+
         int cameraIsSyncable = 0;
         boolean cameraSyncAutomatically = true;
 
         if (intent.getBooleanExtra(ARG_IS_EDITING, false)) {
+            Log.d(DEBUG_TAG, "finishLogin: editing existing account");
 
             String oldAccountName = intent.getStringExtra(ARG_EDIT_OLD_ACCOUNT_NAME);
             final Account oldAccount = new Account(oldAccountName, intent.getStringExtra(AccountManager.KEY_ACCOUNT_TYPE));
 
             // serverUri and mail stay the same. so just update the token and exit
             if (oldAccount.equals(newAccount)) {
+                Log.d(DEBUG_TAG, "finishLogin: only token changed");
 
                 mAccountManager.setAuthToken(newAccount, Authenticator.AUTHTOKEN_TYPE, authtoken);
 
@@ -165,18 +174,24 @@ public class SeafileAuthenticatorActivity extends BaseAuthenticatorActivity {
             mAccountManager.removeAccount(oldAccount, null, null);
         }
 
-        Log.d(DEBUG_TAG, "adding new account "+newAccountName);
-        mAccountManager.addAccountExplicitly(newAccount, null, null);
+        Log.d(DEBUG_TAG, "adding new account " + newAccountName);
+        boolean res = mAccountManager.addAccountExplicitly(newAccount, null, null);
+        Log.d(DEBUG_TAG, "adding new account result="+res);
 
+        Log.d(DEBUG_TAG, "setting auth token");
         mAccountManager.setAuthToken(newAccount, Authenticator.AUTHTOKEN_TYPE, authtoken);
+        Log.d(DEBUG_TAG, "setting user data");
         mAccountManager.setUserData(newAccount, Authenticator.KEY_SERVER_URI, serveruri);
         mAccountManager.setUserData(newAccount, Authenticator.KEY_EMAIL, email);
 
         // set sync settings
 
+        Log.d(DEBUG_TAG, "setting is syncable");
         ContentResolver.setIsSyncable(newAccount, CameraUploadManager.AUTHORITY, cameraIsSyncable);
+        Log.d(DEBUG_TAG, "setting sync auto");
         ContentResolver.setSyncAutomatically(newAccount, CameraUploadManager.AUTHORITY, cameraSyncAutomatically);
 
+        Log.d(DEBUG_TAG, "finishing");
         Bundle result = new Bundle();
         result.putBoolean(AccountManager.KEY_BOOLEAN_RESULT, true);
         result.putString(AccountManager.KEY_ACCOUNT_NAME, newAccountName);

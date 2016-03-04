@@ -77,15 +77,18 @@ public class Authenticator extends AbstractAccountAuthenticator {
                              String[] requiredFeatures,
                              Bundle options) throws NetworkErrorException {
 
-        Log.d(DEBUG_TAG, "addAccount of type "+accountType);
+        Log.d(DEBUG_TAG, "addAccount of accountType="+accountType+" with authtokenType="+authTokenType);
 
         if (authTokenType != null && !authTokenType.equals(Authenticator.AUTHTOKEN_TYPE)) {
+            Log.d(DEBUG_TAG, "bad authtokentype");
+
             Bundle result = new Bundle();
             result.putBoolean(AccountManager.KEY_BOOLEAN_RESULT, false);
             result.putInt(AccountManager.KEY_ERROR_CODE, AccountManager.ERROR_CODE_BAD_ARGUMENTS);
             return result;
         }
 
+        Log.d(DEBUG_TAG, "creating SeafileAuthenticatorActivity intent");
         final Intent intent = new Intent(context, SeafileAuthenticatorActivity.class);
         intent.putExtra(SeafileAuthenticatorActivity.ARG_ACCOUNT_TYPE, accountType);
         intent.putExtra(SeafileAuthenticatorActivity.ARG_IS_EDITING, false);

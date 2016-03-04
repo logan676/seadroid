@@ -66,6 +66,8 @@ public class AccountDetailActivity extends BaseActivity implements Toolbar.OnMen
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d(DEBUG_TAG, "onCreate");
+
         setContentView(R.layout.account_detail);
 
         mAccountManager = android.accounts.AccountManager.get(getBaseContext());
@@ -126,10 +128,14 @@ public class AccountDetailActivity extends BaseActivity implements Toolbar.OnMen
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setTitle(R.string.login);
+        Log.d(DEBUG_TAG, "onCreate finished");
+
     }
 
     @Override
     protected void onDestroy() {
+        Log.d(DEBUG_TAG, "onDestroy");
+
         if (progressDialog != null)
             progressDialog.dismiss();
         super.onDestroy();
@@ -137,6 +143,8 @@ public class AccountDetailActivity extends BaseActivity implements Toolbar.OnMen
 
     @Override
     protected void onSaveInstanceState(Bundle savedInstanceState) {
+        Log.d(DEBUG_TAG, "onSaveInstanceState");
+
         savedInstanceState.putString("email", emailText.getText().toString());
         savedInstanceState.putString("password", passwdText.getText().toString());
 
@@ -145,6 +153,7 @@ public class AccountDetailActivity extends BaseActivity implements Toolbar.OnMen
 
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        Log.d(DEBUG_TAG, "onRestoreInstanceState");
         super.onRestoreInstanceState(savedInstanceState);
 
         emailText.setText((String) savedInstanceState.get("email"));
@@ -153,17 +162,21 @@ public class AccountDetailActivity extends BaseActivity implements Toolbar.OnMen
 
     @Override
     public boolean onMenuItemClick(MenuItem item) {
+        Log.d(DEBUG_TAG, "onMenuItemClick");
         return false;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        Log.d(DEBUG_TAG, "onOptionsItemSelected");
         switch (item.getItemId()) {
             case android.R.id.home:
 
                 /* FYI {@link http://stackoverflow.com/questions/13293772/how-to-navigate-up-to-the-same-parent-state?rq=1} */
                 Intent upIntent = new Intent(this, AccountsActivity.class);
+                Log.d(DEBUG_TAG, "onOptionsItemSelected home");
                 if (NavUtils.shouldUpRecreateTask(this, upIntent)) {
+                    Log.d(DEBUG_TAG, "onOptionsItemSelected shouldUpRecreateTask");
                     // This activity is NOT part of this app's task, so create a new task
                     // when navigating up, with a synthesized back stack.
                     TaskStackBuilder.create(this)
@@ -172,9 +185,11 @@ public class AccountDetailActivity extends BaseActivity implements Toolbar.OnMen
                             // Navigate up to the closest parent
                             .startActivities();
                 } else {
+                    Log.d(DEBUG_TAG, "onOptionsItemSelected nav up");
                     // This activity is part of this app's task, so simply
                     // navigate up to the logical parent activity.
                     // NavUtils.navigateUpTo(this, upIntent);
+
                     upIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                     startActivity(upIntent);
                     finish();
@@ -182,6 +197,7 @@ public class AccountDetailActivity extends BaseActivity implements Toolbar.OnMen
 
                 return true;
         }
+        Log.d(DEBUG_TAG, "onOptionsItemSelected calling super");
         return super.onOptionsItemSelected(item);
     }
 
@@ -254,6 +270,7 @@ public class AccountDetailActivity extends BaseActivity implements Toolbar.OnMen
         String serverURL = serverText.getText().toString().trim();
         String email = emailText.getText().toString().trim();
         String passwd = passwdText.getText().toString();
+        Log.d(DEBUG_TAG, "login(): ->"+serverURL+"<-/email ->"+email+"<-");
 
         ConnectivityManager connMgr = (ConnectivityManager)
             getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -261,16 +278,19 @@ public class AccountDetailActivity extends BaseActivity implements Toolbar.OnMen
 
         if (networkInfo != null && networkInfo.isConnected()) {
             if (serverURL.length() == 0) {
+                Log.d(DEBUG_TAG, "login(): server empty");
                 statusView.setText(R.string.err_server_andress_empty);
                 return;
             }
 
             if (email.length() == 0) {
+                Log.d(DEBUG_TAG, "login(): mail empty");
                 emailText.setError(getResources().getString(R.string.err_email_empty));
                 return;
             }
 
             if (passwd.length() == 0) {
+                Log.d(DEBUG_TAG, "login(): pw empty");
                 passwdText.setError(getResources().getString(R.string.err_passwd_empty));
                 return;
             }
@@ -278,6 +298,7 @@ public class AccountDetailActivity extends BaseActivity implements Toolbar.OnMen
             try {
                 serverURL = Utils.cleanServerURL(serverURL);
             } catch (MalformedURLException e) {
+                Log.d(DEBUG_TAG, "login(): inv server");
                 statusView.setText(R.string.invalid_server_address);
                 Log.d(DEBUG_TAG, "Invalid URL " + serverURL);
                 return;
@@ -294,8 +315,10 @@ public class AccountDetailActivity extends BaseActivity implements Toolbar.OnMen
             progressDialog = new ProgressDialog(this);
             progressDialog.setMessage(getString(R.string.settings_cuc_loading));
             progressDialog.setCancelable(false);
+            Log.d(DEBUG_TAG, "login(): exec LoginTask");
             ConcurrentAsyncTask.execute(new LoginTask(tmpAccount, passwd));
         } else {
+            Log.d(DEBUG_TAG, "login(): no network");
             statusView.setText(R.string.network_down);
         }
     }
@@ -321,36 +344,50 @@ public class AccountDetailActivity extends BaseActivity implements Toolbar.OnMen
             if (params.length != 0)
                 return "Error number of parameter";
 
-            return doLogin();
+            Log.d(DEBUG_TAG, "LoginTask::doInBackground");
+
+            String ret = doLogin();
+            Log.d(DEBUG_TAG, "LoginTask::doLogin="+ret);
+            return ret;
+
         }
 
         private void resend() {
+            Log.d(DEBUG_TAG, "LoginTask::resend");
             ConcurrentAsyncTask.execute(new LoginTask(loginAccount, passwd));
         }
 
         @Override
         protected void onPostExecute(final String result) {
+            Log.d(DEBUG_TAG, "LoginTask::onPostExecute: "+result);
             progressDialog.dismiss();
             if (err == SeafException.sslException) {
+                Log.d(DEBUG_TAG, "LoginTask::onPostExecute sslException");
+
                 SslConfirmDialog dialog = new SslConfirmDialog(loginAccount,
                 new SslConfirmDialog.Listener() {
                     @Override
                     public void onAccepted(boolean rememberChoice) {
+                        Log.d(DEBUG_TAG, "LoginTask::onPostExecute onAccepted");
                         CertsManager.instance().saveCertForAccount(loginAccount, rememberChoice);
                         resend();
                     }
 
                     @Override
                     public void onRejected() {
+                        Log.d(DEBUG_TAG, "LoginTask::onPostExecute onRejected");
                         statusView.setText(result);
                         loginButton.setEnabled(true);
                     }
                 });
+                Log.d(DEBUG_TAG, "LoginTask::onPostExecute showing dialog");
                 dialog.show(getSupportFragmentManager(), SslConfirmDialog.FRAGMENT_TAG);
                 return;
             }
 
+            Log.d(DEBUG_TAG, "LoginTask::onPostExecute result="+result);
             if (result != null && result.equals("Success")) {
+                Log.d(DEBUG_TAG, "LoginTask::onPostExecute success");
 
                 Intent retData = new Intent();
                 retData.putExtras(getIntent());
@@ -363,12 +400,14 @@ public class AccountDetailActivity extends BaseActivity implements Toolbar.OnMen
                 setResult(RESULT_OK, retData);
                 finish();
             } else {
+                Log.d(DEBUG_TAG, "LoginTask::onPostExecute else");
                 statusView.setText(result);
             }
             loginButton.setEnabled(true);
         }
 
         private String doLogin() {
+            Log.d(DEBUG_TAG, "LoginTask::doLogin");
             SeafConnection sc = new SeafConnection(loginAccount);
 
             try {
@@ -378,17 +417,20 @@ public class AccountDetailActivity extends BaseActivity implements Toolbar.OnMen
 
                 // fetch email address from the server
                 DataManager manager = new DataManager(loginAccount);
+                Log.d(DEBUG_TAG, "LoginTask::doLogin getting account info");
                 AccountInfo accountInfo = manager.getAccountInfo();
 
                 if (accountInfo == null)
                     return "Unknown error";
 
                 // replace email address/username given by the user with the address known by the server.
+                Log.d(DEBUG_TAG, "LoginTask::doLogin crating account obj");
                 loginAccount = new Account(loginAccount.server, accountInfo.getEmail(), loginAccount.token);
 
                 return "Success";
 
             } catch (SeafException e) {
+                Log.e(DEBUG_TAG, "LoginTask::doLogin exception", e);
                 err = e;
                 if (e == SeafException.sslException) {
                     return getString(R.string.ssl_error);
@@ -402,6 +444,7 @@ public class AccountDetailActivity extends BaseActivity implements Toolbar.OnMen
                     return e.getMessage();
                 }
             } catch (JSONException e) {
+                Log.e(DEBUG_TAG, "LoginTask::doLogin exception", e);
                 return e.getMessage();
             }
         }

@@ -97,7 +97,9 @@ public class AccountsActivity extends BaseActivity implements Toolbar.OnMenuItem
         addAccount.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View btn) {
-                 mAccountManager.addAccount(Account.ACCOUNT_TYPE,
+                Log.d(DEBUG_TAG, "opening new account wizard");
+
+                mAccountManager.addAccount(Account.ACCOUNT_TYPE,
                          Authenticator.AUTHTOKEN_TYPE, null, null,
                          AccountsActivity.this, accountCallback, null);
             }
@@ -112,9 +114,12 @@ public class AccountsActivity extends BaseActivity implements Toolbar.OnMenuItem
 
                 Account account = accounts.get(position);
                 if (!account.hasValidToken()) {
+                    Log.d(DEBUG_TAG, "editing account b/c no token");
+
                     // user already signed out, input password first
                     startEditAccountActivity(account);
                 } else {
+                    Log.d(DEBUG_TAG, "switching to edited account");
                     // update current Account info from SharedPreference
                     accountManager.saveCurrentAccount(account.getSignature());
                     startFilesActivity();
@@ -180,6 +185,7 @@ public class AccountsActivity extends BaseActivity implements Toolbar.OnMenuItem
                 // if the current account sign out and no account was to logged in,
                 // then always goes to AccountsActivity
                 if (accountManager.getCurrentAccount() == null) {
+                    Log.d(DEBUG_TAG, "onOptionsItemSelected: switching to BrowserActivity");
                     Intent intent = new Intent(this, BrowserActivity.class);
                     intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                     startActivity(intent);
@@ -210,6 +216,8 @@ public class AccountsActivity extends BaseActivity implements Toolbar.OnMenuItem
     }
 
     private void startFilesActivity() {
+        Log.d(DEBUG_TAG, "switching to BrowserActivity");
+
         Intent intent = new Intent(this, BrowserActivity.class);
 
         // first finish this activity, so the BrowserActivity is again "on top"
@@ -240,11 +248,15 @@ public class AccountsActivity extends BaseActivity implements Toolbar.OnMenuItem
     };
 
     private void startEditAccountActivity(Account account) {
+        Log.e(DEBUG_TAG, "editing account " + account);
+
         mAccountManager.updateCredentials(account.getAndroidAccount(), Authenticator.AUTHTOKEN_TYPE, null, this, accountCallback, null);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        Log.e(DEBUG_TAG, "onActivityResult " + requestCode+"/"+resultCode);
+
         switch (requestCode) {
             case DETAIL_ACTIVITY_REQUEST:
                 if (resultCode == RESULT_OK) {
