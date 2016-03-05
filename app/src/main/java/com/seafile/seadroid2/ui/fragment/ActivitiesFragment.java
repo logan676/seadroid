@@ -165,15 +165,15 @@ public class ActivitiesFragment extends Fragment {
             return;
         }
 
-        if (repo.encrypted && !DataManager.getRepoPasswordSet(repo.id)) {
-            String password = DataManager.getRepoPassword(repo.id);
+        if (repo.encrypted && !DataManager.getRepoEnckeySet(repo.id)) {
+            String encKey = DataManager.getRepoEncKey(repo.id);
             getBrowserActivity().showPasswordDialog(repo.name, repo.id,
                     new TaskDialog.TaskDialogListener() {
                         @Override
                         public void onTaskSuccess() {
                             switchTab(repoID, repo.getName(), repo.getRootDirID());
                         }
-                    }, password);
+                    }, encKey);
 
         } else {
             switchTab(repoID, repo.getName(), repo.getRootDirID());
@@ -188,15 +188,15 @@ public class ActivitiesFragment extends Fragment {
             return;
         }
 
-        if (repo.encrypted && !DataManager.getRepoPasswordSet(repo.id)) {
-            String password = DataManager.getRepoPassword(repo.id);
+        if (repo.encrypted && !DataManager.getRepoEnckeySet(repo.id)) {
+            String encKey = DataManager.getRepoEncKey(repo.id);
             getBrowserActivity().showPasswordDialog(repo.name, repo.id,
                     new TaskDialog.TaskDialogListener() {
                         @Override
                         public void onTaskSuccess() {
                             openFile(repoID, repo.getName(), path);
                         }
-                    }, password);
+                    }, encKey);
 
         } else {
             openFile(repoID, repo.getName(), path);
