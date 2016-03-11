@@ -1,14 +1,21 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion rootProject.ext.compileSdkVersion
-    buildToolsVersion rootProject.ext.buildToolsVersion
+    compileSdkVersion 23
+    buildToolsVersion "23.0.2"
 
     defaultConfig {
-        minSdkVersion rootProject.ext.minSdkVersion
-        targetSdkVersion rootProject.ext.targetSdkVersion
+        minSdkVersion 8
+        targetSdkVersion 23
         versionCode 50
         versionName "2.0.4"
+        multiDexEnabled true
+    }
+
+    packagingOptions {
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/LICENSE.md'
+        exclude 'META-INF/THIRD_PARTY_LICENSE.md'
     }
 
     lintOptions {
@@ -53,8 +60,8 @@ android {
 
     dependencies {
         compile fileTree(dir: 'libs', include: ['*.jar'])
-        compile 'com.android.support:appcompat-v7:23.1.1'
-        compile 'com.android.support:design:23.1.1'
+        compile 'com.android.support:appcompat-v7:23.2.0'
+        compile 'com.android.support:design:23.2.0'
         compile 'com.inkapplications.viewpageindicator:library:2.4.3'
         compile 'com.github.kevinsawicki:http-request:5.6'
         compile 'commons-io:commons-io:2.4'
