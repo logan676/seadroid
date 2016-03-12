@@ -14,7 +14,7 @@ import com.google.common.collect.Maps;
 import com.seafile.seadroid2.account.Account;
 import com.seafile.seadroid2.data.DataManager;
 import com.seafile.seadroid2.data.ProgressMonitor;
-import com.seafile.seadroid2.data.SeafLargeFile;
+import com.seafile.seadroid2.data.SeafBlock;
 import com.seafile.seadroid2.ssl.SSLTrustManager;
 import com.seafile.seadroid2.util.Utils;
 
@@ -455,7 +455,7 @@ public class SeafConnection {
         return apiPath;
     }
 
-    private void uploadRawBlocks(SeafLargeFile largeFile, boolean update, DataManager mgr) throws IOException {
+    private void uploadRawBlocks(SeafBlock largeFile, boolean update, DataManager mgr) throws IOException {
         if (largeFile.missingblocks == null) return;
 
         int blkidx = 0;
@@ -479,6 +479,17 @@ public class SeafConnection {
 
         HttpEntity entity = builder.build();
         req.send(entity.getContent());
+    }
+
+    public String uploadByBlocks(String repoID, String dir, String filePath, List<String> blockids, List<String> blockpaths, boolean update) throws IOException, SeafException {
+        try {
+            String url = getUploadLink(repoID, update, true);
+            return uploadFileChunksCommon(url, repoID, dir, filePath, blockpaths, null, update);
+        } catch (SeafException e) {
+            // do again
+            String url = getUploadLink(repoID, update, true);
+            return uploadFileChunksCommon(url, repoID, dir, filePath, blockpaths, null, update);
+        }
     }
 
     private void uploadBlocksCommit(String commiturl, boolean update, String uploadpath, String name, long fileSize, List<String> allblocks) throws IOException {
@@ -611,12 +622,22 @@ public class SeafConnection {
     }
 
     private String getUploadLink(String repoID, boolean update) throws SeafException {
+        return getUploadLink(repoID, update, false);
+    }
+
+    private String getUploadLink(String repoID, boolean update, boolean byblock) throws SeafException {
         try {
             String apiPath;
             if (update) {
-                apiPath = "api2/repos/" + repoID + "/update-link/";
+                apiPath = "api2/repos/" + repoID + "/update-";
             } else {
-                apiPath = "api2/repos/" + repoID + "/upload-link/";
+                apiPath = "api2/repos/" + repoID + "/upload-";
+            }
+
+            if (byblock) {
+                apiPath = apiPath + "blks-link/";
+            } else {
+                apiPath = apiPath + "link/";
             }
 
             HttpRequest req = prepareApiGetRequest(apiPath);
@@ -736,6 +757,120 @@ public class SeafConnection {
             // line 1
             String l1 = TWO_HYPENS + BOUNDARY + CRLF;
             // line 2,
+            String contentDisposition = "Content-Disposition: form-data; name=\"file\";filename=\"" + file.getName() + "\"" + CRLF;
+            byte[] l2 = contentDisposition.getBytes("UTF-8");
+            // line 3
+            String l3 = "Content-Type: text/plain" + CRLF;
+            // line 4
+            String l4 = CRLF;
+            totalLen += l1.length() + l2.length + l3.length() + l4.length() + file.length() + 2;
+
+            String end = TWO_HYPENS + BOUNDARY + TWO_HYPENS + CRLF;
+            totalLen += end.length();
+
+            req.contentLength(totalLen);
+            req.header("Connection", "close");
+            req.header("Cache-Control", "no-cache");
+            req.header("Content-Type", "multipart/form-data;boundary=" + BOUNDARY);
+
+            if (update) {
+                req.send(targetFileParam);
+            } else {
+                req.send(dirParam);
+            }
+            req.send(l1);
+            req.send(l2);
+            req.send(l3);
+            req.send(l4);
+
+            if (monitor != null) {
+                req.bufferSize(MonitoredFileInputStream.BUFFER_SIZE);
+                req.send(new MonitoredFileInputStream(file, monitor));
+            } else {
+                req.send(new FileInputStream(file));
+            }
+
+            req.send(CRLF);
+            req.send(end);
+
+            checkRequestResponseStatus(req, HttpURLConnection.HTTP_OK);
+
+            return new String(req.bytes(), "UTF-8");
+        } catch (IOException e) {
+            throw SeafException.networkException;
+        } catch (HttpRequestException e) {
+            if (e.getCause() instanceof MonitorCancelledException) {
+                Log.d(DEBUG_TAG, "upload is cancelled");
+                throw SeafException.userCancelledException;
+            } else {
+                throw getSeafExceptionFromHttpRequestException(e);
+            }
+        }
+    }
+
+    /**
+     * Upload file chunks to seafile httpserver
+     */
+    private String uploadFileChunksCommon(String link, String repoID, String dir,
+                                          String filePath, List<String> blockpaths,
+                                          ProgressMonitor monitor, boolean update)
+                                        throws SeafException {
+
+        try {
+            File file = new File(filePath);
+            if (!file.exists()) {
+                throw new SeafException(SeafException.OTHER_EXCEPTION, "File not exists");
+            }
+
+
+            HttpRequest req = HttpRequest.post(link).followRedirects(true).connectTimeout(CONNECTION_TIMEOUT);
+
+            prepareHttpsCheck(req);
+
+            /**
+             * We have to set the content-length header, otherwise the whole
+             * request would be buffered by android. So we have to format the
+             * multipart form-data request ourselves in order to calculate the
+             * content length.
+             */
+            int totalLen = 0;
+            byte[] dirParam = {};
+            byte[] targetFileParam = {};
+            StringBuilder builder;
+
+            if (update) {
+                // the "target_file" param is for update file api
+                builder = new StringBuilder();
+                // line 1, ------SeafileAndroidBound$_$
+                builder.append(TWO_HYPENS + BOUNDARY + CRLF);
+                // line 2
+                builder.append("Content-Disposition: form-data; name=\"target_file\"" + CRLF);
+                // line 3, an empty line
+                builder.append(CRLF);
+                String targetFilePath = Utils.pathJoin(dir, file.getName());
+                // line 4
+                builder.append(targetFilePath + CRLF);
+                targetFileParam = builder.toString().getBytes("UTF-8");
+                totalLen += targetFileParam.length;
+            } else {
+                // the "parent_dir" param is for upload file api
+                builder = new StringBuilder();
+                // line 1, ------SeafileAndroidBound$_$
+                builder.append(TWO_HYPENS + BOUNDARY + CRLF);
+                // line 2
+                builder.append("Content-Disposition: form-data; name=\"parent_dir\"" + CRLF);
+                // line 3, an empty line
+                builder.append(CRLF);
+                // line 4
+                builder.append(dir + CRLF);
+                dirParam = builder.toString().getBytes("UTF-8");
+                totalLen += dirParam.length;
+            }
+
+            // line 1
+            String l1 = TWO_HYPENS + BOUNDARY + CRLF;
+            // line 2,
+            // TODO need to add chunks
             String contentDisposition = "Content-Disposition: form-data; name=\"file\";filename=\"" + file.getName() + "\"" + CRLF;
             byte[] l2 = contentDisposition.getBytes("UTF-8");
             // line 3

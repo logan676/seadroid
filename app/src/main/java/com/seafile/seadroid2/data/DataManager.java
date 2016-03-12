@@ -844,6 +844,15 @@ public class DataManager {
         return info.secretKey;
     }
 
+    public static String getRepoEncIv(String repoID) {
+        final EncIVInfo info = encIVMap.get(repoID);
+        if (info == null) {
+            return null;
+        }
+
+        return info.encIV;
+    }
+
     /**
      * calculate if refresh time is expired, the expiration is 10 mins 
      */
@@ -970,13 +979,13 @@ public class DataManager {
         }
     }
 
-    private SeafLargeFile chunkFile(String encKey, byte[] enkIv, int version, String filePath) {
+    private SeafBlock chunkFile(String encKey, byte[] enkIv, int version, String filePath) {
         int bufferSize = 2 * 1024 * 1024;
         File file = new File(filePath);
         InputStream in;
         OutputStream out;
         byte[] buffer = new byte[bufferSize];
-        SeafLargeFile largeFile = new SeafLargeFile();
+        SeafBlock largeFile = new SeafBlock();
         try {
             in = new FileInputStream(file);
 
@@ -1009,5 +1018,22 @@ public class DataManager {
 
     public void downloadByBlocks(String repoID, String path) throws SeafException {
         final Pair<String, String> blocks = sc.downloadByBlocks(repoID, path);
+    }
+
+    public void uploadByBlocks(String repoName, String repoId, String dir,
+                               String filePath, ProgressMonitor monitor,
+                               boolean isCopyToLocal, int version, boolean update) throws NoSuchAlgorithmException, IOException, SeafException {
+        final String encKey = getRepoEncKey(repoId);
+        final String encIv = getRepoEncIv(repoId);
+        if (TextUtils.isEmpty(encKey) || TextUtils.isEmpty(encIv)) {
+            // TODO calculate them and continue
+            return;
+        }
+
+        final SeafBlock chunkFile = chunkFile(encKey, Crypto.fromHex(encIv), version, filePath);
+        if (chunkFile == null) {
+            return;
+        }
+        sc.uploadByBlocks(repoId, dir, filePath, chunkFile.blockids, chunkFile.blockpaths, update);
     }
 }
