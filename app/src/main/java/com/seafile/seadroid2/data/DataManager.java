@@ -985,17 +985,19 @@ public class DataManager {
         InputStream in;
         OutputStream out;
         byte[] buffer = new byte[bufferSize];
-        SeafBlock largeFile = new SeafBlock();
+        SeafBlock seafBlock = new SeafBlock();
         try {
             in = new FileInputStream(file);
 
+            Log.d(DEBUG_TAG, "file size " + file.length());
             while (in.read(buffer, 0, bufferSize) != -1) {
                 final byte[] cipher = Crypto.encrypt(buffer, encKey, enkIv, version);
                 final String blockid = Crypto.sha1(cipher);
-                largeFile.chunks.add(cipher);
-                largeFile.blockids.add(blockid);
-                File block = new File(getExternalTempDirectory(), blockid);
-                largeFile.blockpaths.add(block.getAbsolutePath());
+                seafBlock.chunks.add(cipher);
+                seafBlock.blockids.add(blockid);
+                File block = new File(getChunkDirectory(), blockid);
+                seafBlock.blockpaths.add(block.getAbsolutePath());
+                Log.d(DEBUG_TAG, "chunk " + block.getAbsolutePath());
                 out = new FileOutputStream(block);
                 out.write(cipher);
                 out.close();
@@ -1003,7 +1005,7 @@ public class DataManager {
 
             in.close();
 
-            return largeFile;
+            return seafBlock;
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             return null;
@@ -1025,15 +1027,17 @@ public class DataManager {
                                boolean isCopyToLocal, int version, boolean update) throws NoSuchAlgorithmException, IOException, SeafException {
         final String encKey = getRepoEncKey(repoId);
         final String encIv = getRepoEncIv(repoId);
+        Log.d(DEBUG_TAG, "encKey " + encKey + " encIv " + encIv);
         if (TextUtils.isEmpty(encKey) || TextUtils.isEmpty(encIv)) {
             // TODO calculate them and continue
             return;
         }
 
         final SeafBlock chunkFile = chunkFile(encKey, Crypto.fromHex(encIv), version, filePath);
-        if (chunkFile == null) {
+        if (chunkFile.blockids.isEmpty()) {
             return;
         }
+
         sc.uploadByBlocks(repoId, dir, filePath, chunkFile.blockids, chunkFile.blockpaths, update);
     }
 }

@@ -62,6 +62,7 @@ import com.seafile.seadroid2.transfer.PendingUploadInfo;
 import com.seafile.seadroid2.transfer.TransferManager;
 import com.seafile.seadroid2.transfer.TransferService;
 import com.seafile.seadroid2.transfer.TransferService.TransferBinder;
+import com.seafile.seadroid2.transfer.UploadBlocksTask;
 import com.seafile.seadroid2.transfer.UploadTaskInfo;
 import com.seafile.seadroid2.transfer.UploadTaskManager;
 import com.seafile.seadroid2.ui.CopyMoveContext;
@@ -1361,7 +1362,13 @@ public class BrowserActivity extends BaseActivity
                     }
 
                     if (!duplicate) {
-                        addUploadTask(navContext.getRepoID(), navContext.getRepoName(), navContext.getDirPath(), file.getAbsolutePath());
+                        final SeafRepo repo = dataManager.getCachedRepoByID(navContext.getRepoID());
+                        if (repo != null && repo.canLocalDecrypt()) {
+                            UploadBlocksTask task = new UploadBlocksTask(1, account, repo.id, repo.name, navContext.getDirPath(), file.getAbsolutePath(), false, false, repo.encVersion, null);
+                            task.execute();
+                        } else {
+                            addUploadTask(navContext.getRepoID(), navContext.getRepoName(), navContext.getDirPath(), file.getAbsolutePath());
+                        }
                     } else {
                         showFileExistDialog(file);
                     }
