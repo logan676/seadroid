@@ -1038,6 +1038,7 @@ public class DataManager {
             return;
         }
 
-        sc.uploadByBlocks(repoId, dir, filePath, chunkFile.blockids, chunkFile.blockpaths, update);
+        final String ret = sc.uploadByBlocks(repoId, dir, filePath, chunkFile.blockids, chunkFile.blockpaths, update);
+        Log.d(DEBUG_TAG, "uploadByBlocks " + ret);
     }
 }

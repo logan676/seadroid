@@ -484,10 +484,12 @@ public class SeafConnection {
     public String uploadByBlocks(String repoID, String dir, String filePath, List<String> blockids, List<String> blockpaths, boolean update) throws IOException, SeafException {
         try {
             String url = getUploadLink(repoID, update, true);
+            Log.d(DEBUG_TAG, "UploadLink " + url);
             return uploadFileChunksCommon(url, repoID, dir, filePath, blockpaths, null, update);
         } catch (SeafException e) {
             // do again
             String url = getUploadLink(repoID, update, true);
+            Log.d(DEBUG_TAG, "do again UploadLink " + url);
             return uploadFileChunksCommon(url, repoID, dir, filePath, blockpaths, null, update);
         }
     }
@@ -651,6 +653,7 @@ public class SeafConnection {
             } else
                 throw SeafException.unknownException;
         } catch (SeafException e) {
+            Log.d(DEBUG_TAG, e.getCode() + e.getMessage());
             throw e;
         } catch (Exception e) {
             String msg = e.getMessage();
@@ -808,6 +811,47 @@ public class SeafConnection {
         }
     }
 
+    private StringBuilder assembleParams(String key, String value) throws UnsupportedEncodingException {
+        // the "parent_dir" param is for upload file api
+        StringBuilder builder = new StringBuilder();
+        // line 1, ------SeafileAndroidBound$_$
+        builder.append(TWO_HYPENS + BOUNDARY + CRLF);
+        // line 2
+        builder.append("Content-Disposition: form-data; name=\"" + key + "\"" + CRLF);
+        // line 3, an empty line
+        builder.append(CRLF);
+        // line 4
+        builder.append(value + CRLF);
+        return builder;
+    }
+
+    private StringBuilder assembleFileParams(String filename, String value) throws UnsupportedEncodingException {
+        // the "parent_dir" param is for upload file api
+        StringBuilder builder = new StringBuilder();
+        // line 1, ------SeafileAndroidBound$_$
+        builder.append(TWO_HYPENS + BOUNDARY + CRLF);
+        // line 2
+        builder.append("Content-Disposition: form-data; name=\"file\"; filename=\"" + filename + "\"" + CRLF);
+        // line 3, an empty line
+        builder.append("Content-Type: text/plain" + CRLF);
+        builder.append("Content-Length: " + 29 + CRLF);
+        builder.append(CRLF);
+        // line 4
+        builder.append(value + CRLF);
+        return builder;
+
+        /*// line 1
+            String l1 = TWO_HYPENS + BOUNDARY + CRLF;
+            // line 2,
+            String contentDisposition = "Content-Disposition: form-data; name=\"file\";filename=\"" + file.getName() + "\"" + CRLF;
+            byte[] l2 = contentDisposition.getBytes("UTF-8");
+            // line 3
+            String l3 = "Content-Type: text/plain" + CRLF;
+            // line 4
+            String l4 = CRLF;
+            totalLen += l1.length() + l2.length + l3.length() + l4.length() + file.length() + 2;*/
+    }
+
     /**
      * Upload file chunks to seafile httpserver
      */
@@ -836,48 +880,37 @@ public class SeafConnection {
             int totalLen = 0;
             byte[] dirParam = {};
             byte[] targetFileParam = {};
-            StringBuilder builder;
-
+            StringBuilder params = new StringBuilder();
             if (update) {
-                // the "target_file" param is for update file api
-                builder = new StringBuilder();
-                // line 1, ------SeafileAndroidBound$_$
-                builder.append(TWO_HYPENS + BOUNDARY + CRLF);
-                // line 2
-                builder.append("Content-Disposition: form-data; name=\"target_file\"" + CRLF);
-                // line 3, an empty line
-                builder.append(CRLF);
-                String targetFilePath = Utils.pathJoin(dir, file.getName());
-                // line 4
-                builder.append(targetFilePath + CRLF);
-                targetFileParam = builder.toString().getBytes("UTF-8");
-                totalLen += targetFileParam.length;
-            } else {
-                // the "parent_dir" param is for upload file api
-                builder = new StringBuilder();
-                // line 1, ------SeafileAndroidBound$_$
-                builder.append(TWO_HYPENS + BOUNDARY + CRLF);
-                // line 2
-                builder.append("Content-Disposition: form-data; name=\"parent_dir\"" + CRLF);
-                // line 3, an empty line
-                builder.append(CRLF);
-                // line 4
-                builder.append(dir + CRLF);
-                dirParam = builder.toString().getBytes("UTF-8");
-                totalLen += dirParam.length;
+                final StringBuilder replace = assembleParams("replace", "1");
+                params.append(replace);
+                totalLen += replace.toString().getBytes("UTF-8").length;
             }
-
-            // line 1
+            final StringBuilder parentDir = assembleParams("parent_dir", dir);
+            final StringBuilder fileName = assembleParams("file_name", file.getName());
+            final StringBuilder fileSize = assembleParams("file_size", String.valueOf(file.length()));
+            params.append(parentDir);
+            params.append(fileName);
+            params.append(fileSize);
+            totalLen += parentDir.toString().getBytes("UTF-8").length;
+            totalLen += fileName.toString().getBytes("UTF-8").length;
+            totalLen += fileSize.toString().getBytes("UTF-8").length;
+            for (String blkpath : blockpaths) {
+                final StringBuilder f = assembleFileParams(Utils.fileNameFromPath(blkpath), blkpath);
+                params.append(f);
+                totalLen += f.toString().getBytes("UTF-8").length;
+            }
+            /*// line 1
             String l1 = TWO_HYPENS + BOUNDARY + CRLF;
             // line 2,
-            // TODO need to add chunks
             String contentDisposition = "Content-Disposition: form-data; name=\"file\";filename=\"" + file.getName() + "\"" + CRLF;
             byte[] l2 = contentDisposition.getBytes("UTF-8");
             // line 3
             String l3 = "Content-Type: text/plain" + CRLF;
             // line 4
             String l4 = CRLF;
-            totalLen += l1.length() + l2.length + l3.length() + l4.length() + file.length() + 2;
+            totalLen += l1.length() + l2.length + l3.length() + l4.length() + file.length() + 2;*/
+            totalLen += file.length() + 2;
 
             String end = TWO_HYPENS + BOUNDARY + TWO_HYPENS + CRLF;
             totalLen += end.length();
@@ -886,16 +919,12 @@ public class SeafConnection {
             req.header("Connection", "close");
             req.header("Cache-Control", "no-cache");
             req.header("Content-Type", "multipart/form-data;boundary=" + BOUNDARY);
-
-            if (update) {
-                req.send(targetFileParam);
-            } else {
-                req.send(dirParam);
-            }
-            req.send(l1);
+            dirParam = params.toString().getBytes("UTF-8");
+            req.send(dirParam);
+            /*req.send(l1);
             req.send(l2);
             req.send(l3);
-            req.send(l4);
+            req.send(l4);*/
 
             if (monitor != null) {
                 req.bufferSize(MonitoredFileInputStream.BUFFER_SIZE);
