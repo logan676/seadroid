@@ -577,7 +577,7 @@ public class BrowserActivity extends BaseActivity
                 // show Activity tab
                 adapter.unHideActivityTab();
                 adapter.notifyDataSetChanged();
-                mTabLayout.setTabsFromPagerAdapter(adapter);
+                //mTabLayout.setTabsFromPagerAdapter(adapter);
             }
 
             if (serverInfo.isSearchEnabled()) {

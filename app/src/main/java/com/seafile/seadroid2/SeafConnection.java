@@ -10,6 +10,7 @@ import android.util.Pair;
 
 import com.github.kevinsawicki.http.HttpRequest;
 import com.github.kevinsawicki.http.HttpRequest.HttpRequestException;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.seafile.seadroid2.account.Account;
 import com.seafile.seadroid2.data.DataManager;
@@ -24,6 +25,8 @@ import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedInputStream;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -33,6 +36,8 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -879,62 +884,132 @@ public class SeafConnection {
              */
             int totalLen = 0;
             byte[] dirParam = {};
-            byte[] targetFileParam = {};
-            StringBuilder params = new StringBuilder();
+            StringBuilder builder;
             if (update) {
-                final StringBuilder replace = assembleParams("replace", "1");
-                params.append(replace);
-                totalLen += replace.toString().getBytes("UTF-8").length;
+                // the "target_file" param is for update file api
+                builder = new StringBuilder();
+                // line 1, ------SeafileAndroidBound$_$
+                builder.append(TWO_HYPENS + BOUNDARY + CRLF);
+                // line 2
+                builder.append("Content-Disposition: form-data; name=\"replace\"" + CRLF);
+                // line 3, an empty line
+                builder.append(CRLF);
+                // line 4
+                builder.append("1" + CRLF);
+                dirParam = builder.toString().getBytes("UTF-8");
+                totalLen += dirParam.length;
             }
-            final StringBuilder parentDir = assembleParams("parent_dir", dir);
-            final StringBuilder fileName = assembleParams("file_name", file.getName());
-            final StringBuilder fileSize = assembleParams("file_size", String.valueOf(file.length()));
-            params.append(parentDir);
-            params.append(fileName);
-            params.append(fileSize);
-            totalLen += parentDir.toString().getBytes("UTF-8").length;
-            totalLen += fileName.toString().getBytes("UTF-8").length;
-            totalLen += fileSize.toString().getBytes("UTF-8").length;
-            for (String blkpath : blockpaths) {
-                final StringBuilder f = assembleFileParams(Utils.fileNameFromPath(blkpath), blkpath);
-                params.append(f);
-                totalLen += f.toString().getBytes("UTF-8").length;
-            }
-            /*// line 1
-            String l1 = TWO_HYPENS + BOUNDARY + CRLF;
-            // line 2,
-            String contentDisposition = "Content-Disposition: form-data; name=\"file\";filename=\"" + file.getName() + "\"" + CRLF;
-            byte[] l2 = contentDisposition.getBytes("UTF-8");
-            // line 3
-            String l3 = "Content-Type: text/plain" + CRLF;
+
+            // the "parent_dir" param is for update file api
+            StringBuilder parentDirBuilder = new StringBuilder();
+            // line 1, ------SeafileAndroidBound$_$
+            parentDirBuilder.append(TWO_HYPENS + BOUNDARY + CRLF);
+            // line 2
+            parentDirBuilder.append("Content-Disposition: form-data; name=\"parent_dir\"" + CRLF);
+            // line 3, an empty line
+            parentDirBuilder.append(CRLF);
             // line 4
-            String l4 = CRLF;
-            totalLen += l1.length() + l2.length + l3.length() + l4.length() + file.length() + 2;*/
-            totalLen += file.length() + 2;
+            parentDirBuilder.append(dir + CRLF);
+            totalLen += parentDirBuilder.toString().getBytes("UTF-8").length;
+
+            // the "parent_dir" param is for update file api
+            StringBuilder fileNameBuilder = new StringBuilder();
+            // line 1, ------SeafileAndroidBound$_$
+            fileNameBuilder.append(TWO_HYPENS + BOUNDARY + CRLF);
+            // line 2
+            fileNameBuilder.append("Content-Disposition: form-data; name=\"file_name\"" + CRLF);
+            // line 3, an empty line
+            fileNameBuilder.append(CRLF);
+            // line 4
+            fileNameBuilder.append(file.getName() + CRLF);
+            totalLen += fileNameBuilder.toString().getBytes("UTF-8").length;
+
+            // the "parent_dir" param is for update file api
+            StringBuilder fileSizeBuilder = new StringBuilder();
+            // line 1, ------SeafileAndroidBound$_$
+            fileSizeBuilder.append(TWO_HYPENS + BOUNDARY + CRLF);
+            // line 2
+            fileSizeBuilder.append("Content-Disposition: form-data; name=\"file_size\"" + CRLF);
+            // line 3, an empty line
+            fileSizeBuilder.append(CRLF);
+            // line 4
+            fileSizeBuilder.append(file.length() + CRLF);
+            totalLen += fileSizeBuilder.toString().getBytes("UTF-8").length;
+
+            // List<String> chunkReqList = new ArrayList<>();
+            for (String blkpath : blockpaths) {
+                // line 1
+                String l1 = TWO_HYPENS + BOUNDARY + CRLF;
+
+                File blk = new File(blkpath);
+
+                // line 2
+                String contentDisposition = "Content-Disposition: form-data; name=\"file\";filename=\"" + blk.getName() + "\"" + CRLF;
+                byte[] l2 = contentDisposition.getBytes("UTF-8");
+
+                // line 3, an empty line
+                String l3 = "Content-Type: text/plain" + CRLF;
+
+                // line 4
+                String l4 = CRLF;
+                totalLen += l1.length() + l2.length + l3.length() + l4.length() + blk.length() + 2;
+
+            }
 
             String end = TWO_HYPENS + BOUNDARY + TWO_HYPENS + CRLF;
-            totalLen += end.length();
+            totalLen += end.getBytes().length;
 
             req.contentLength(totalLen);
-            req.header("Connection", "close");
+            req.header("Connection", "Keep-Alive");
             req.header("Cache-Control", "no-cache");
             req.header("Content-Type", "multipart/form-data;boundary=" + BOUNDARY);
-            dirParam = params.toString().getBytes("UTF-8");
-            req.send(dirParam);
-            /*req.send(l1);
-            req.send(l2);
-            req.send(l3);
-            req.send(l4);*/
 
-            if (monitor != null) {
-                req.bufferSize(MonitoredFileInputStream.BUFFER_SIZE);
-                req.send(new MonitoredFileInputStream(file, monitor));
-            } else {
-                req.send(new FileInputStream(file));
+            if (update) {
+                req.send(dirParam);
+                Log.d(DEBUG_TAG, dirParam.toString());
             }
 
-            req.send(CRLF);
+            Log.d(DEBUG_TAG, parentDirBuilder.toString());
+            Log.d(DEBUG_TAG, fileNameBuilder.toString());
+            Log.d(DEBUG_TAG, fileSizeBuilder.toString());
+
+            req.send(parentDirBuilder);
+            req.send(fileNameBuilder);
+            req.send(fileSizeBuilder);
+
+            for (String blkpath : blockpaths) {
+                // line 1
+                String l1 = TWO_HYPENS + BOUNDARY + CRLF;
+
+                File blk = new File(blkpath);
+
+                // line 2
+                String contentDisposition = "Content-Disposition: form-data; name=\"file\";filename=\"" + blk.getName() + "\"" + CRLF;
+                byte[] l2 = contentDisposition.getBytes("UTF-8");
+
+                // line 3, an empty line
+                String l3 = "Content-Type: text/plain" + CRLF;
+
+                // line 4
+                String l4 = CRLF;
+                totalLen += l1.length() + l2.length + l3.length() + l4.length() + blk.length() + 2;
+
+                StringBuilder chunkReq = new StringBuilder();
+                chunkReq.append(l1).append(contentDisposition).append(l3).append(l4);
+                req.send(chunkReq);
+
+                File block = new File(blkpath);
+                if (monitor != null) {
+                    req.bufferSize(MonitoredFileInputStream.BUFFER_SIZE);
+                    req.send(new MonitoredFileInputStream(block, monitor));
+                } else {
+                    req.send(new FileInputStream(block));
+                }
+                req.send(CRLF);
+            }
+
             req.send(end);
+            Log.d(DEBUG_TAG, end);
 
             checkRequestResponseStatus(req, HttpURLConnection.HTTP_OK);
 
