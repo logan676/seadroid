@@ -17,6 +17,7 @@ import com.seafile.seadroid2.crypto.Crypto;
 import com.seafile.seadroid2.util.Utils;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -1093,6 +1094,7 @@ public class DataManager {
 
     private SeafBlock chunkFile(String encKey, byte[] enkIv, int version, String filePath) {
         int bufferSize = 2 * 1024 * 1024;
+        int offset = 0;
         File file = new File(filePath);
         InputStream in;
         OutputStream out;
@@ -1102,8 +1104,9 @@ public class DataManager {
             in = new FileInputStream(file);
 
             Log.d(DEBUG_TAG, "file size " + file.length());
-            while (in.read(buffer, 0, bufferSize) != -1) {
-                final byte[] cipher = Crypto.encrypt(buffer, encKey, enkIv);
+            while (offset < file.length() && (offset = in.read(buffer, offset, bufferSize)) != -1) {
+                Log.d(DEBUG_TAG, "offset " + offset);
+                final byte[] cipher = Crypto.encrypt(buffer, offset, encKey, enkIv);
                 final String blockid = Crypto.sha1(cipher);
                 seafBlock.chunks.add(cipher);
                 seafBlock.blockids.add(blockid);
@@ -1113,6 +1116,7 @@ public class DataManager {
                 out = new FileOutputStream(block);
                 out.write(cipher);
                 out.close();
+                Log.d(DEBUG_TAG, "blocksize " + block.length());
             }
 
             in.close();

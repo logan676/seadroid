@@ -39,7 +39,7 @@ import javax.crypto.spec.SecretKeySpec;
 public class Crypto {
     private static final String TAG = Crypto.class.getSimpleName();
 
-    private static final String CIPHER_ALGORITHM = "AES/CBC/NoPadding";
+    private static final String CIPHER_ALGORITHM = "AES/CBC/PKCS7Padding";
 
     private static int KEY_LENGTH = 32;
     private static int KEY_LENGTH_SHORT = 16;
@@ -70,20 +70,7 @@ public class Crypto {
             throw SeafException.unsupportedEncVersion;
         }
 
-        String src = repoID + password;
-        // If you use version 1.47 or higher of SpongyCastle, you can invoke PBKDF2WithHmacSHA256 directly.
-        // In versions of BC < 1.47, you could not specify SHA256 digest and it defaulted to SHA1.
-        // see http://stackoverflow.com/questions/6898801/how-to-include-the-spongy-castle-jar-in-android
-        PKCS5S2ParametersGenerator gen = new PKCS5S2ParametersGenerator(new SHA256Digest());
-        gen.init(PBEParametersGenerator.PKCS5PasswordToUTF8Bytes(src.toCharArray()), salt, ITERATION_COUNT);
-        byte[] keyBytes;
-
-        if (version == 2) {
-            keyBytes = ((KeyParameter) gen.generateDerivedMacParameters(KEY_LENGTH * 8)).getKey();
-        } else
-            keyBytes = ((KeyParameter) gen.generateDerivedMacParameters(KEY_LENGTH_SHORT * 8)).getKey();
-
-        return toHex(keyBytes);
+        return deriveKey(repoID + password, version);
     }
 
     /**
@@ -132,9 +119,9 @@ public class Crypto {
         final byte[] iv = deriveIv(fromHex(key));
 
         // decrypt the file key from the encrypted file key
-        final String keyBytes = seafileDecrypt(fromHex(randomKey), derivedKey, iv);
+        final String fileKey = seafileDecrypt(fromHex(randomKey), derivedKey, iv);
         // The client only saves the key/iv pair derived from the "file key", which is used to decrypt the data
-        final String encKey = deriveKey(keyBytes, version);
+        final String encKey = deriveKey(fileKey, version);
         return new Pair<>(encKey, deriveIv(fromHex(encKey)));
     }
 
@@ -188,7 +175,7 @@ public class Crypto {
             return null;
         } catch (BadPaddingException e) {
             e.printStackTrace();
-            Log.e(TAG, "BadPaddingException " + e.getMessage());
+            Log.e(TAG, "seafileDecrypt BadPaddingException " + e.getMessage());
             return null;
         } catch (IllegalBlockSizeException e) {
             Log.e(TAG, "IllegalBlockSizeException " + e.getMessage());
@@ -212,14 +199,14 @@ public class Crypto {
      * @param key
      * @return
      */
-    private static byte[] seafileEncrypt(byte[] plaintext, SecretKey key, byte[] iv) {
+    private static byte[] seafileEncrypt(byte[] plaintext, int offset, SecretKey key, byte[] iv) {
         try {
             Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
 
             IvParameterSpec ivParams = new IvParameterSpec(iv);
             cipher.init(Cipher.ENCRYPT_MODE, key, ivParams);
 
-            return cipher.doFinal(plaintext);
+            return cipher.doFinal(plaintext, 0, offset);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
             Log.e(TAG, "NoSuchAlgorithmException " + e.getMessage());
@@ -242,7 +229,7 @@ public class Crypto {
             return null;
         } catch (BadPaddingException e) {
             e.printStackTrace();
-            Log.e(TAG, "BadPaddingException " + e.getMessage());
+            Log.e(TAG, "seafileEncrypt BadPaddingException " + e.getMessage());
             return null;
         }
     }
@@ -257,9 +244,9 @@ public class Crypto {
      * @param encKey
      * @return
      */
-    public static byte[] encrypt(byte[] plaintext, String encKey, byte[] iv) throws NoSuchAlgorithmException, UnsupportedEncodingException {
+    public static byte[] encrypt(byte[] plaintext, int offset, String encKey, byte[] iv) throws NoSuchAlgorithmException, UnsupportedEncodingException {
         SecretKey secretKey = new SecretKeySpec(fromHex(encKey), "AES");
-        return seafileEncrypt(plaintext, secretKey , iv);
+        return seafileEncrypt(plaintext, offset, secretKey , iv);
     }
 
     /**
@@ -269,54 +256,12 @@ public class Crypto {
      * After encryption, the data is uploaded to the server.
      *
      * @param plaintext
-     * @param key
+     * @param encKey
      * @return
      */
-    public static byte[] decrypt(byte[] plaintext, String key, byte[] iv, int version) throws NoSuchAlgorithmException {
-        PKCS5S2ParametersGenerator gen = new PKCS5S2ParametersGenerator(new SHA256Digest());
-        gen.init(PBEParametersGenerator.PKCS5PasswordToUTF8Bytes(key.toCharArray()), salt, ITERATION_COUNT);
-        byte[] keyBytes;
-
-        if (version == 2) {
-            keyBytes = ((KeyParameter) gen.generateDerivedMacParameters(KEY_LENGTH * 8)).getKey();
-        } else
-            keyBytes = ((KeyParameter) gen.generateDerivedMacParameters(KEY_LENGTH_SHORT * 8)).getKey();
-
-        SecretKey realKey = new SecretKeySpec(keyBytes, "AES");
+    public static byte[] decrypt(byte[] plaintext, String encKey, byte[] iv, int version) throws NoSuchAlgorithmException, UnsupportedEncodingException {
+        SecretKey realKey = new SecretKeySpec(fromHex(encKey), "AES");
         return fromHex(seafileDecrypt(plaintext, realKey , iv));
-    }
-
-    /**
-     * All file data is decrypt by the file key with AES 256/CBC.
-     *
-     * @param cipherBytes
-     * @param key
-     * @param iv
-     * @return
-     */
-    private static byte[] decrypt(byte[] cipherBytes, SecretKey key, byte[] iv) {
-        try {
-            Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
-            IvParameterSpec ivParams = new IvParameterSpec(iv);
-            cipher.init(Cipher.DECRYPT_MODE, key, ivParams);
-            return cipher.update(cipherBytes);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-            Log.e(TAG, "NoSuchAlgorithmException " + e.getMessage());
-            return null;
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-            Log.e(TAG, "InvalidKeyException " + e.getMessage());
-            return null;
-        } catch (InvalidAlgorithmParameterException e) {
-            e.printStackTrace();
-            Log.e(TAG, "InvalidAlgorithmParameterException " + e.getMessage());
-            return null;
-        } catch (NoSuchPaddingException e) {
-            e.printStackTrace();
-            Log.e(TAG, "NoSuchPaddingException " + e.getMessage());
-            return null;
-        }
     }
 
     /**
