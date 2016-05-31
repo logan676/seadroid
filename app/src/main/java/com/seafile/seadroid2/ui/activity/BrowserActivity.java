@@ -33,6 +33,7 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.view.ContextThemeWrapper;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.util.Pair;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -45,7 +46,6 @@ import com.seafile.seadroid2.R;
 import com.seafile.seadroid2.SeafConnection;
 import com.seafile.seadroid2.SeafException;
 import com.seafile.seadroid2.SettingsManager;
-import com.seafile.seadroid2.data.StorageManager;
 import com.seafile.seadroid2.account.Account;
 import com.seafile.seadroid2.account.AccountManager;
 import com.seafile.seadroid2.cameraupload.MediaObserverService;
@@ -173,11 +173,30 @@ public class BrowserActivity extends BaseActivity
         }
     }
 
+    public void addUpdateBlocksTask(String repoID, String repoName, String targetDir, String localFilePath, int version) {
+        if (txService != null) {
+            txService.addTaskToUploadQue(account, repoID, repoName, targetDir, localFilePath, true, true, version);
+        } else {
+            PendingUploadInfo info = new PendingUploadInfo(repoID, repoName, targetDir, localFilePath, true, true, version);
+            pendingUploads.add(info);
+        }
+    }
+
     private int addUploadTask(String repoID, String repoName, String targetDir, String localFilePath) {
         if (txService != null) {
             return txService.addTaskToUploadQue(account, repoID, repoName, targetDir, localFilePath, false, true);
         } else {
             PendingUploadInfo info = new PendingUploadInfo(repoID, repoName, targetDir, localFilePath, false, true);
+            pendingUploads.add(info);
+            return 0;
+        }
+    }
+
+    private int addUploadBlocksTask(String repoID, String repoName, String targetDir, String localFilePath, int version) {
+        if (txService != null) {
+            return txService.addTaskToUploadQue(account, repoID, repoName, targetDir, localFilePath, false, true, version);
+        } else {
+            PendingUploadInfo info = new PendingUploadInfo(repoID, repoName, targetDir, localFilePath, false, true, version);
             pendingUploads.add(info);
             return 0;
         }
@@ -251,7 +270,6 @@ public class BrowserActivity extends BaseActivity
         adapter = new SeafileTabsAdapter(getSupportFragmentManager());
         pager.setAdapter(adapter);
         mTabLayout = (TabLayout) findViewById(R.id.sliding_tabs);
-        mTabLayout.setTabsFromPagerAdapter(adapter);
         mTabLayout.setupWithViewPager(pager);
         mTabLayout.setOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
@@ -278,6 +296,34 @@ public class BrowserActivity extends BaseActivity
 
             }
         });
+
+        pager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+
+            }
+
+            @Override
+            public void onPageSelected(int position) {
+                currentPosition = position;
+                supportInvalidateOptionsMenu();
+                pager.setCurrentItem(position, true);
+                if (currentPosition != INDEX_LIBRARY_TAB) {
+                    disableUpButton();
+                } else if (navContext.inRepo()) {
+                    enableUpButton();
+                }
+
+                setUpButtonTitleOnSlideTabs(position);
+            }
+
+            @Override
+            public void onPageScrollStateChanged(int state) {
+
+            }
+        });
+
+        pager.setOffscreenPageLimit(3);
 
         if (savedInstanceState != null) {
             Log.d(DEBUG_TAG, "savedInstanceState is not null");
@@ -341,6 +387,7 @@ public class BrowserActivity extends BaseActivity
         requestServerInfo();
 
         requestReadExternalStoragePermission();
+
     }
 
     public FrameLayout getContainer() {
@@ -360,7 +407,7 @@ public class BrowserActivity extends BaseActivity
             // hide Activity tab
             adapter.hideActivityTab();
             adapter.notifyDataSetChanged();
-            mTabLayout.setTabsFromPagerAdapter(adapter);
+            mTabLayout.setupWithViewPager(pager);
         }
 
         if (!checkSearchEnabled()) {
@@ -420,18 +467,13 @@ public class BrowserActivity extends BaseActivity
                 if (currentPosition == INDEX_LIBRARY_TAB) {
                     if (navContext.inRepo()) {
                         SeafRepo repo = dataManager.getCachedRepoByID(navContext.getRepoID());
-                        if (repo.encrypted && !DataManager.getRepoPasswordSet(repo.id)) {
-                            String password = DataManager.getRepoPassword(repo.id);
-                            showPasswordDialog(repo.name, repo.id,
-                                    new TaskDialog.TaskDialogListener() {
-                                        @Override
-                                        public void onTaskSuccess() {
-                                            getReposFragment().startContextualActionMode();
-                                        }
-                                    } , password);
-
-                            return true;
-                        }
+                        handleEncryptedRepo(repo, new TaskDialog.TaskDialogListener() {
+                            @Override
+                            public void onTaskSuccess() {
+                                getReposFragment().startContextualActionMode();
+                            }
+                        });
+                        return true;
                     }
 
                     getReposFragment().startContextualActionMode();
@@ -445,6 +487,26 @@ public class BrowserActivity extends BaseActivity
                 return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void handleEncryptedRepo(SeafRepo repo, TaskDialog.TaskDialogListener taskDialogListener) {
+        if (!repo.encrypted) return;
+
+        if (!repo.canLocalDecrypt()) {
+            if (!DataManager.getRepoPasswordSet(repo.id)) {
+                String password = DataManager.getRepoPassword(repo.id);
+                showPasswordDialog(repo.name, repo.id, taskDialogListener, password);
+            } else {
+                taskDialogListener.onTaskSuccess();
+            }
+        } else {
+            if (!dataManager.getRepoEnckeySet(repo.id)) {
+                Pair<String, String> pair = dataManager.getRepoEncKey(repo.id);
+                showPasswordDialog(repo.name, repo.id, taskDialogListener, pair == null ? null : pair.first);
+            } else {
+                taskDialogListener.onTaskSuccess();
+            }
+        }
     }
 
     /**
@@ -549,7 +611,7 @@ public class BrowserActivity extends BaseActivity
                 // show Activity tab
                 adapter.unHideActivityTab();
                 adapter.notifyDataSetChanged();
-                mTabLayout.setTabsFromPagerAdapter(adapter);
+                mTabLayout.setupWithViewPager(pager);
             }
 
             if (serverInfo.isSearchEnabled()) {
@@ -674,6 +736,7 @@ public class BrowserActivity extends BaseActivity
         this.currentPosition = currentPosition;
         pager.setCurrentItem(currentPosition);
         mTabLayout.setScrollPosition(currentPosition, 0, true);
+        setUpButtonTitleOnSlideTabs(currentPosition);
     }
 
     public Fragment getFragment(int index) {
@@ -704,13 +767,24 @@ public class BrowserActivity extends BaseActivity
             Log.d(DEBUG_TAG, "bind TransferService");
 
             for (PendingUploadInfo info : pendingUploads) {
-                txService.addTaskToUploadQue(account,
-                                            info.repoID,
-                                            info.repoName,
-                                            info.targetDir,
-                                            info.localFilePath,
-                                            info.isUpdate,
-                                            info.isCopyToLocal);
+                if (info.enckVersion != -1) {
+                    txService.addTaskToUploadQue(account,
+                            info.repoID,
+                            info.repoName,
+                            info.targetDir,
+                            info.localFilePath,
+                            info.isUpdate,
+                            info.isCopyToLocal,
+                            info.enckVersion);
+                } else {
+                    txService.addTaskToUploadQue(account,
+                            info.repoID,
+                            info.repoName,
+                            info.targetDir,
+                            info.localFilePath,
+                            info.isUpdate,
+                            info.isCopyToLocal);
+                }
             }
             pendingUploads.clear();
         }
@@ -937,16 +1011,12 @@ public class BrowserActivity extends BaseActivity
         if (currentPosition == INDEX_LIBRARY_TAB) {
             if (navContext.inRepo()) {
                 SeafRepo repo = dataManager.getCachedRepoByID(navContext.getRepoID());
-                if (repo.encrypted && !DataManager.getRepoPasswordSet(repo.id)) {
-                    String password = DataManager.getRepoPassword(repo.id);
-                    showPasswordDialog(repo.name, repo.id,
-                            new TaskDialog.TaskDialogListener() {
-                                @Override
-                                public void onTaskSuccess() {
-                                    getReposFragment().sortFiles(type, order);
-                                }
-                            }, password);
-                }
+                handleEncryptedRepo(repo, new TaskDialog.TaskDialogListener() {
+                    @Override
+                    public void onTaskSuccess() {
+                        getReposFragment().sortFiles(type, order);
+                    }
+                });
             }
             getReposFragment().sortFiles(type, order);
         }
@@ -1328,7 +1398,12 @@ public class BrowserActivity extends BaseActivity
                     }
 
                     if (!duplicate) {
-                        addUploadTask(navContext.getRepoID(), navContext.getRepoName(), navContext.getDirPath(), file.getAbsolutePath());
+                        final SeafRepo repo = dataManager.getCachedRepoByID(navContext.getRepoID());
+                        if (repo != null && repo.canLocalDecrypt()) {
+                            addUploadBlocksTask(repo.id, repo.name, navContext.getDirPath(), file.getAbsolutePath(), repo.encVersion);
+                        } else {
+                            addUploadTask(navContext.getRepoID(), navContext.getRepoName(), navContext.getDirPath(), file.getAbsolutePath());
+                        }
                     } else {
                         showFileExistDialog(file);
                     }
@@ -1352,6 +1427,7 @@ public class BrowserActivity extends BaseActivity
     }
 
     private void showFileExistDialog(final File file) {
+        final SeafRepo repo = dataManager.getCachedRepoByID(navContext.getRepoID());
         ContextThemeWrapper ctw = new ContextThemeWrapper(BrowserActivity.this, R.style.DialogTheme);
         final android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(ctw);
         builder.setTitle(getString(R.string.upload_file_exist));
@@ -1359,7 +1435,11 @@ public class BrowserActivity extends BaseActivity
         builder.setPositiveButton(getString(R.string.upload_replace), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                addUpdateTask(navContext.getRepoID(), navContext.getRepoName(), navContext.getDirPath(), file.getAbsolutePath());
+                if (repo != null && repo.canLocalDecrypt()) {
+                    addUpdateBlocksTask(repo.id, repo.name, navContext.getDirPath(), file.getAbsolutePath(), repo.encVersion);
+                } else {
+                    addUpdateTask(navContext.getRepoID(), navContext.getRepoName(), navContext.getDirPath(), file.getAbsolutePath());
+                }
             }
         });
         builder.setNeutralButton(getString(R.string.cancel), new DialogInterface.OnClickListener() {
@@ -1370,7 +1450,11 @@ public class BrowserActivity extends BaseActivity
         builder.setNegativeButton(getString(R.string.upload_keep_both), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                addUploadTask(navContext.getRepoID(), navContext.getRepoName(), navContext.getDirPath(), file.getAbsolutePath());
+                if (repo != null && repo.canLocalDecrypt()) {
+                    addUploadBlocksTask(repo.id, repo.name, navContext.getDirPath(), file.getAbsolutePath(), repo.encVersion);
+                } else {
+                    addUploadTask(navContext.getRepoID(), navContext.getRepoName(), navContext.getDirPath(), file.getAbsolutePath());
+                }
             }
         });
         builder.show();
@@ -1406,7 +1490,9 @@ public class BrowserActivity extends BaseActivity
             return;
         }
 
-        startFileActivity(repoName, repoID, filePath);
+        if (repo == null) return;
+
+        startFileActivity(repoName, repoID, filePath, repo.canLocalDecrypt(), repo.encVersion);
     }
 
     /**
@@ -1519,11 +1605,22 @@ public class BrowserActivity extends BaseActivity
                         if (txService == null)
                             return null;
 
-                        txService.addTaskToDownloadQue(account,
-                                repoName,
-                                repoID,
-                                Utils.pathJoin(dirPaths.get(i),
-                                        seafDirent.name));
+                        final SeafRepo repo = dataManager.getCachedRepoByID(repoID);
+                        if (repo != null && repo.canLocalDecrypt()) {
+                            txService.addTaskToDownloadQue(account,
+                                    repoName,
+                                    repoID,
+                                    Utils.pathJoin(dirPaths.get(i),
+                                            seafDirent.name),
+                                    true,
+                                    repo.encVersion);
+                        } else {
+                            txService.addTaskToDownloadQue(account,
+                                    repoName,
+                                    repoID,
+                                    Utils.pathJoin(dirPaths.get(i),
+                                            seafDirent.name));
+                        }
                         fileCount++;
                     }
                 }
@@ -1557,8 +1654,13 @@ public class BrowserActivity extends BaseActivity
         }
     }
 
-    private void startFileActivity(String repoName, String repoID, String filePath) {
-        final int taskID = txService.addDownloadTask(account, repoName, repoID, filePath);
+    private void startFileActivity(String repoName, String repoID, String filePath, boolean byBlock, int encVersion) {
+        int taskID = 0;
+        if (byBlock) {
+            taskID = txService.addDownloadTask(account, repoName, repoID, filePath, true, encVersion);
+        } else {
+            taskID = txService.addDownloadTask(account, repoName, repoID, filePath);
+        }
         Intent intent = new Intent(this, FileActivity.class);
         intent.putExtra("repoName", repoName);
         intent.putExtra("repoID", repoID);
@@ -1573,14 +1675,15 @@ public class BrowserActivity extends BaseActivity
 
         final String repoID = starredFile.getRepoID();
         final SeafRepo repo = dataManager.getCachedRepoByID(repoID);
+        if (repo == null) return;
+
         final String repoName = repo.getName();
         final String filePath = starredFile.getPath();
         final String dirPath = Utils.getParentPath(filePath);
 
         // Encrypted repo doesn\`t support gallery,
         // because pic thumbnail under encrypted repo was not supported at the server side
-        if (Utils.isViewableImage(starredFile.getTitle())
-                && repo != null && !repo.encrypted) {
+        if (Utils.isViewableImage(starredFile.getTitle()) && !repo.encrypted) {
             WidgetUtils.startGalleryActivity(this, repoName, repoID, dirPath, starredFile.getTitle(), account);
             return;
         }
@@ -1591,7 +1694,7 @@ public class BrowserActivity extends BaseActivity
             return;
         }
 
-        startFileActivity(repoName, repoID, filePath);
+        startFileActivity(repoName, repoID, filePath, repo.canLocalDecrypt(), repo.encVersion);
     }
 
     @Override
@@ -1857,12 +1960,10 @@ public class BrowserActivity extends BaseActivity
         final String repoID = info.repoID;
         final String path = info.pathInRepo;
 
-        if (err != null
-                && err.getCode() == SeafConnection.HTTP_STATUS_REPO_PASSWORD_REQUIRED) {
+        if (err != null && err.getCode() == SeafConnection.HTTP_STATUS_REPO_PASSWORD_REQUIRED) {
             if (currentPosition == INDEX_LIBRARY_TAB
                     && repoID.equals(navContext.getRepoID())
-                    && Utils.getParentPath(path)
-                            .equals(navContext.getDirPath())) {
+                    && Utils.getParentPath(path).equals(navContext.getDirPath())) {
                 showPasswordDialog(repoName, repoID,
                         new TaskDialog.TaskDialogListener() {
                             @Override
@@ -1919,6 +2020,18 @@ public class BrowserActivity extends BaseActivity
         passwordDialog.setRepo(repoName, repoID, account);
         if (password != null) {
             passwordDialog.setPassword(password);
+        }
+        passwordDialog.setTaskDialogLisenter(listener);
+        passwordDialog.show(getSupportFragmentManager(), PASSWORD_DIALOG_FRAGMENT_TAG);
+        return passwordDialog;
+    }
+
+    public PasswordDialog showEncDialog(String repoName, String repoID, String magic, String randomKey, int version,
+                                             TaskDialog.TaskDialogListener listener, String encKey) {
+        PasswordDialog passwordDialog = new PasswordDialog();
+        passwordDialog.setRepo(repoName, repoID, magic, randomKey, version, account);
+        if (encKey != null) {
+            passwordDialog.setPassword(encKey);
         }
         passwordDialog.setTaskDialogLisenter(listener);
         passwordDialog.show(getSupportFragmentManager(), PASSWORD_DIALOG_FRAGMENT_TAG);
@@ -2077,11 +2190,22 @@ public class BrowserActivity extends BaseActivity
                         if (txService == null)
                             return null;
 
-                        txService.addTaskToDownloadQue(account,
-                                repoName,
-                                repoID,
-                                Utils.pathJoin(dirPaths.get(i),
-                                        seafDirent.name));
+                        final SeafRepo repo = dataManager.getCachedRepoByID(repoID);
+                        if (repo != null && repo.canLocalDecrypt()) {
+                            txService.addTaskToDownloadQue(account,
+                                    repoName,
+                                    repoID,
+                                    Utils.pathJoin(dirPaths.get(i),
+                                            seafDirent.name),
+                                    true,
+                                    repo.encVersion);
+                        } else {
+                            txService.addTaskToDownloadQue(account,
+                                    repoName,
+                                    repoID,
+                                    Utils.pathJoin(dirPaths.get(i),
+                                            seafDirent.name));
+                        }
                         fileCount++;
                     }
 

@@ -9,7 +9,7 @@
   <string name="delete_successful">Pomyślnie usunięto</string>
   <string name="delete_file_f">Usuń plik</string>
   <string name="delete_dir">Usuń folder</string>
-  <string name="server_hint">Serwer, np. cloud.seafile.com</string>
+  <string name="server_hint">Adres serwera</string>
   <string name="email_hint">Nazwa użytkownika lub adres email</string>
   <string name="passwd_hint">Hasło</string>
   <string name="login">Login</string>
@@ -104,6 +104,7 @@
   <string name="library_read_only">Ta biblioteka jest tylko do odczytu</string>
   <string name="error_when_load_dirents">Błąd podczas wczytywania folderu.\n Dotknij, aby odświeżyć</string>
   <string name="error_when_load_repos">Błąd podczas wczytywania bibliotek.\n Dotknij, aby odświeżyć</string>
+  <string name="error_when_load_activities">Błąd podczas wczytywania aktywności.\n Dotknij, aby odświeżyć</string>
   <string name="dir_empty">Ten folder jest pusty</string>
   <string name="no_repo">Nie masz jeszcze żadnej biblioteki</string>
   <string name="no_app_available">Nie znaleziono aplikacji</string>
@@ -342,6 +343,7 @@
         <h5>Copyright ©2013-2016 Seafile Ltd.</h5>
         ]]>
     </string>
+  <string name="settings_advance_feature_title">ZAAWANSOWANE</string>
   <string name="settings_storage_title">PAMIĘĆ PODRĘCZNA</string>
   <string name="settings_cache_title">Pamięć podręczna</string>
   <string name="settings_clear_cache_title">Opróżnij pamięć podręczną</string>
@@ -459,4 +461,9 @@
   <string name="permission_not_granted">Nie przyznano uprawnień</string>
   <string name="history_change_title">Szczegóły modyfikacji</string>
   <string name="no_more_activities">Brak więcej aktywności</string>
+  <!--client sid encryption and decryption-->
+  <string name="enc_on">Dane zaszyfrowane po stronie klienta</string>
+  <string name="enc_off">Dane zaszyfrowane po stronie serwera</string>
+  <string name="enc_title">Zaszyfrowana biblioteka</string>
+  <!--clear password-->
 </resources>

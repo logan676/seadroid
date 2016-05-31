@@ -1,24 +1,36 @@
 package com.seafile.seadroid2.transfer;
 
+import android.util.Log;
+
 import com.seafile.seadroid2.SeafException;
 import com.seafile.seadroid2.account.Account;
 import com.seafile.seadroid2.data.DataManager;
 import com.seafile.seadroid2.data.ProgressMonitor;
 
+import org.json.JSONException;
+
 import java.io.File;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * Download task
  *
  */
 public class DownloadTask extends TransferTask {
+    public static final String DEBUG_TAG = "DownloadTask";
 
     private String localPath;
     private DownloadStateListener downloadStateListener;
+    private boolean byBlock;
+    private boolean updateTotal;
+    private int encVersion;
 
-    public DownloadTask(int taskID, Account account, String repoName, String repoID, String path,
+    public DownloadTask(int taskID, Account account, String repoName, String repoID, String path, boolean byBlock, int encVersion,
                         DownloadStateListener downloadStateListener) {
         super(taskID, account, repoName, repoID, path);
+        this.byBlock = byBlock;
+        this.encVersion = encVersion;
         this.downloadStateListener = downloadStateListener;
     }
 
@@ -28,7 +40,7 @@ public class DownloadTask extends TransferTask {
      */
     @Override
     protected void onProgressUpdate(Long... values) {
-        if (totalSize == -1) {
+        if (totalSize == -1 || updateTotal) {
             totalSize = values[0];
             state = TaskState.TRANSFERRING;
             return;
@@ -41,22 +53,51 @@ public class DownloadTask extends TransferTask {
     protected File doInBackground(Void... params) {
         try {
             DataManager dataManager = new DataManager(account);
-            return dataManager.getFile(repoName, repoID, path,
-                    new ProgressMonitor() {
+            if (byBlock) {
+                return dataManager.getFileByBlocks(repoName, repoID, path, encVersion,
+                        new ProgressMonitor() {
 
-                        @Override
-                        public void onProgressNotify(long total) {
-                            publishProgress(total);
-                        }
+                            @Override
+                            public void onProgressNotify(long total, boolean updateTotal) {
+                                DownloadTask.this.updateTotal = updateTotal;
+                                publishProgress(total);
+                            }
 
-                        @Override
-                        public boolean isCancelled() {
-                            return DownloadTask.this.isCancelled();
+                            @Override
+                            public boolean isCancelled() {
+                                return DownloadTask.this.isCancelled();
+                            }
                         }
-                    }
-            );
+                );
+            } else
+                return dataManager.getFile(repoName, repoID, path,
+                        new ProgressMonitor() {
+
+                            @Override
+                            public void onProgressNotify(long total, boolean updateTotal) {
+                                publishProgress(total);
+                            }
+
+                            @Override
+                            public boolean isCancelled() {
+                                return DownloadTask.this.isCancelled();
+                            }
+                        }
+                );
         } catch (SeafException e) {
             err = e;
+            return null;
+        } catch (JSONException e) {
+            err = SeafException.unknownException;
+            e.printStackTrace();
+            return null;
+        } catch (IOException e) {
+            err = SeafException.networkException;
+            e.printStackTrace();
+            return null;
+        } catch (NoSuchAlgorithmException e) {
+            err = SeafException.unknownException;
+            e.printStackTrace();
             return null;
         }
     }

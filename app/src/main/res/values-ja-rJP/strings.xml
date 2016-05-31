@@ -9,7 +9,7 @@
   <string name="delete_successful">正常に削除しました</string>
   <string name="delete_file_f">ファイルを削除</string>
   <string name="delete_dir">フォルダーを削除</string>
-  <string name="server_hint">サーバー。例 cloud.seafile.com</string>
+  <string name="server_hint">サーバーアドレス</string>
   <string name="email_hint">ユーザー名またはメールアドレス</string>
   <string name="passwd_hint">パスワード</string>
   <string name="login">ログイン</string>
@@ -102,6 +102,7 @@
   <string name="library_read_only">このライブラリーは読み取り専用です</string>
   <string name="error_when_load_dirents">フォルダーの読み込み時にエラー。\n タップすると更新します</string>
   <string name="error_when_load_repos">ライブラリーの読み込み時にエラー。\n タップすると更新します</string>
+  <string name="error_when_load_activities">アクティビティの読み込み時にエラー。\n タップすると更新します</string>
   <string name="dir_empty">このフォルダーは空です</string>
   <string name="no_repo">まだライブラリーはありません</string>
   <string name="no_app_available">アプリが見つかりません</string>
@@ -332,6 +333,7 @@
         <h5>Copyright ©2013-2016 Seafile Ltd.</h5>
         ]]>
     </string>
+  <string name="settings_advance_feature_title">高度な機能</string>
   <string name="settings_storage_title">キャッシュストレージ</string>
   <string name="settings_cache_title">キャッシュサイズ</string>
   <string name="settings_clear_cache_title">キャッシュをクリア</string>
@@ -441,4 +443,14 @@
   <string name="permission_not_granted">アクセス許可が付与されていません</string>
   <string name="history_change_title">更新の詳細</string>
   <string name="no_more_activities">これ以上アクティビティはありません</string>
+  <!--client sid encryption and decryption-->
+  <string name="enc_on">ローカルの暗号化によりデータを保護</string>
+  <string name="enc_off">サーバーサイドの暗号化によりデータを保護</string>
+  <string name="enc_title">暗号化されたライブラリーでデータの保護</string>
+  <!--clear password-->
+  <string name="clear_password_title">パスワードをクリア</string>
+  <string name="clear_password_hint">クリックするとパスワードをクリアします</string>
+  <string name="clear_password_successful">パスワードを正常にクリアしました</string>
+  <string name="clear_password_failed">パスワードのクリアに失敗しました</string>
+  <string name="clear_password_warning">パスワードをクリアしますか?</string>
 </resources>

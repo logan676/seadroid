@@ -5,10 +5,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v7.app.ActionBar;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import com.seafile.seadroid2.R;
 import com.seafile.seadroid2.ui.ToastUtils;
@@ -88,7 +86,7 @@ public class MarkdownActivity extends BaseActivity implements Toolbar.OnMenuItem
         // First try to find an activity who can handle markdown edit
         Intent editAsMarkDown = new Intent(Intent.ACTION_EDIT);
 
-        Uri uri = Uri.fromFile(new File(path));
+        Uri uri = Uri.parse(path);
         String mime = "text/markdown";
         editAsMarkDown.setDataAndType(uri, mime);
 

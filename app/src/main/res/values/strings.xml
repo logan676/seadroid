@@ -11,7 +11,7 @@
     <string name="delete_successful">Successfully deleted</string>
     <string name="delete_file_f">Delete file</string>
     <string name="delete_dir">Delete folder</string>
-    <string name="server_hint">Server, like cloud.seafile.com</string>
+    <string name="server_hint">Server address</string>
     <string name="email_hint">Username or email address</string>
     <string name="passwd_hint">Password</string>
     <string name="login">Login</string>
@@ -46,6 +46,8 @@
         <item>Shibboleth Login</item>
         <item>Other Seafile Server</item>
     </string-array>
+    <string name="server_url_seacloud" translatable="false">https://seacloud.cc</string>
+    <string name="server_url_app_seafile" translatable="false">https://app.seafile.de</string>
     <string name="network_down">No network connection</string>
     <string name="unknow_error">Unknown error</string>
     <string name="invalid_server_address">Invalid server address</string>
@@ -108,6 +110,7 @@
     <string name="library_read_only">This library is read-only</string>
     <string name="error_when_load_dirents">Error when loading the folder.\n Tap to refresh</string>
     <string name="error_when_load_repos">Error when loading libraries.\n Tap to refresh</string>
+    <string name="error_when_load_activities">Error when loading activities.\n Tap to refresh</string>
     <string name="dir_empty">This folder is empty</string>
     <string name="no_repo">You have no libraries yet</string>
     <string name="no_app_available">No app can be found</string>
@@ -482,4 +485,16 @@
 
     <string name="history_change_title">Modification Details</string>
     <string name="no_more_activities">No more activities</string>
+
+    <!-- client sid encryption and decryption -->
+    <string name="enc_on">Data protected by local encryption</string>
+    <string name="enc_off">Data protected by server side encryption</string>
+    <string name="enc_title">Encrypted library data protection</string>
+
+    <!-- clear password -->
+    <string name="clear_password_title">Clear password</string>
+    <string name="clear_password_hint">Click to clear password</string>
+    <string name="clear_password_successful">Clear password successful</string>
+    <string name="clear_password_failed">Clear password failed</string>
+    <string name="clear_password_warning">Do you want to clear password?</string>
 </resources>

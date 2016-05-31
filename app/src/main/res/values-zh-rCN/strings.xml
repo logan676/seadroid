@@ -9,7 +9,7 @@
   <string name="delete_successful">删除成功</string>
   <string name="delete_file_f">删除文件</string>
   <string name="delete_dir">删除文件夹</string>
-  <string name="server_hint">服务器地址, 比如cloud.seafile.com</string>
+  <string name="server_hint">服务器地址</string>
   <string name="email_hint">用户名或邮箱</string>
   <string name="passwd_hint">密码</string>
   <string name="login">登录</string>
@@ -102,6 +102,7 @@
   <string name="library_read_only">这个资料库是只读的</string>
   <string name="error_when_load_dirents">文件夹数据加载出错.\n 点击刷新</string>
   <string name="error_when_load_repos">资料库数据加载出错.\n 点击刷新</string>
+  <string name="error_when_load_activities">活动数据加载出错.\n 点击刷新</string>
   <string name="dir_empty">此文件夹是空的</string>
   <string name="no_repo">无资料库</string>
   <string name="no_app_available">没有找到应用</string>
@@ -227,7 +228,7 @@
   <string name="settings_account_sign_out_hint">点击退出</string>
   <string name="settings_account_sign_out_confirm">你想退出登录吗？</string>
   <string name="security">安全性</string>
-  <string name="gesture_lock">手势密码锁定</string>
+  <string name="gesture_lock">手势密码锁</string>
   <string name="gesture_lock_on">手势锁开启</string>
   <string name="gesture_lock_off">手势锁关闭</string>
   <string name="lockscreen_access_pattern_hint">请绘制手势密码</string>
@@ -442,4 +443,14 @@
   <string name="permission_not_granted">未获得权限</string>
   <string name="history_change_title">修改详情</string>
   <string name="no_more_activities">没有更多活动了</string>
+  <!--client sid encryption and decryption-->
+  <string name="enc_on">数据已被本地加密保护</string>
+  <string name="enc_off">数据已被服务器端加密保护</string>
+  <string name="enc_title">加密资料库数据保护</string>
+  <!--clear password-->
+  <string name="clear_password_title">清除密码</string>
+  <string name="clear_password_hint">点击清除密码</string>
+  <string name="clear_password_successful">清除密码成功</string>
+  <string name="clear_password_failed">清除密码失败</string>
+  <string name="clear_password_warning">你想清除密码吗？</string>
 </resources>

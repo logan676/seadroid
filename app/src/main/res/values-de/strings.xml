@@ -9,7 +9,6 @@
   <string name="delete_successful">Erfolgreich gelöscht</string>
   <string name="delete_file_f">Datei löschen</string>
   <string name="delete_dir">Ordner löschen</string>
-  <string name="server_hint">Server, z.B. cloud.seafile.com</string>
   <string name="email_hint">Benutzername oder E-Mail-Adresse</string>
   <string name="passwd_hint">Passwort</string>
   <string name="login">Anmelden</string>
@@ -339,6 +338,7 @@ Zum Aktualisieren einmal antippen</string>
         <h5>Copyright ©2013-2016 Seafile Ltd.</h5>
         ]]>
     </string>
+  <string name="settings_advance_feature_title">ERWEITERTE FEATURES</string>
   <string name="settings_storage_title">ZWISCHENSPEICHER</string>
   <string name="settings_cache_title">Größe des Zwischenspeichers</string>
   <string name="settings_clear_cache_title">Zwischenspeicher löschen</string>
@@ -452,4 +452,6 @@ Zum Aktualisieren einmal antippen</string>
   <string name="permission_not_granted">Berechtigung wurde nicht erteilt</string>
   <string name="history_change_title">Änderungsinformationen</string>
   <string name="no_more_activities">Keine weiteren Aktivitäten</string>
+  <!--client sid encryption and decryption-->
+  <!--clear password-->
 </resources>

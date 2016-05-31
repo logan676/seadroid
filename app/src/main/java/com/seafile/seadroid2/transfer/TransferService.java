@@ -96,6 +96,26 @@ public class TransferService extends Service {
 
     /**
      * Call this method to handle upload request, like file upload or camera upload.
+     * Uploading tasks are managed in a queue.
+     *
+     * Note: use isCopyToLocal to mark automatic camera upload if false, or file upload if true.
+     * @param account
+     * @param repoID
+     * @param repoName
+     * @param dir
+     * @param filePath
+     * @param isUpdate
+     * @param isCopyToLocal
+     * @param version
+     * @return
+     */
+    public int addTaskToUploadQue(Account account, String repoID, String repoName, String dir,
+                             String filePath, boolean isUpdate, boolean isCopyToLocal, int version) {
+        return uploadTaskManager.addTaskToQue(account, repoID, repoName, dir, filePath, isUpdate, isCopyToLocal, version);
+    }
+
+    /**
+     * Call this method to handle upload request, like file upload or camera upload.
      *
      * Note: use isCopyToLocal to mark automatic camera upload if false, or file upload if true.
      * @param account
@@ -184,11 +204,19 @@ public class TransferService extends Service {
 
     // -------------------------- download task --------------------//
     public int addDownloadTask(Account account, String repoName, String repoID, String path) {
-        return downloadTaskManager.addTask(account, repoName, repoID, path);
+        return addDownloadTask(account, repoName, repoID, path, false, -1);
+    }
+
+    public int addDownloadTask(Account account, String repoName, String repoID, String path, boolean byBlock, int encVersion) {
+        return downloadTaskManager.addTask(account, repoName, repoID, path, byBlock, encVersion);
     }
 
     public void addTaskToDownloadQue(Account account, String repoName, String repoID, String path) {
-        downloadTaskManager.addTaskToQue(account, repoName, repoID, path);
+        addTaskToDownloadQue(account, repoName, repoID, path, false, -1);
+    }
+
+    public void addTaskToDownloadQue(Account account, String repoName, String repoID, String path, boolean byBlock, int encVersion) {
+        downloadTaskManager.addTaskToQue(account, repoName, repoID, path, byBlock, encVersion);
     }
 
     public List<DownloadTaskInfo> getAllDownloadTaskInfos() {

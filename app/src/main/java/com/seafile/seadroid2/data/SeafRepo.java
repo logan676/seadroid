@@ -1,10 +1,13 @@
 package com.seafile.seadroid2.data;
 
-import android.util.Log;
+import android.text.TextUtils;
+
 import com.seafile.seadroid2.R;
 import com.seafile.seadroid2.SeadroidApplication;
+import com.seafile.seadroid2.SettingsManager;
 import com.seafile.seadroid2.util.PinyinUtils;
 import com.seafile.seadroid2.util.Utils;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -25,7 +28,9 @@ public class SeafRepo implements SeafItem {
     public boolean isSharedRepo;
     public boolean encrypted;
     public String permission;
-
+    public String magic;
+    public String encKey;
+    public int encVersion;
     public long    size;
     public String  root; // the id of root directory
 
@@ -42,6 +47,9 @@ public class SeafRepo implements SeafItem {
         repo.isGroupRepo = obj.getString("type").equals("grepo");
         repo.isPersonalRepo = obj.getString("type").equals("repo");
         repo.isSharedRepo = obj.getString("type").equals("srepo");
+        repo.magic = obj.optString("magic");
+        repo.encKey = obj.optString("random_key");
+        repo.encVersion = obj.optInt("enc_version");
         return repo;
     }
 
@@ -78,6 +86,13 @@ public class SeafRepo implements SeafItem {
             return R.drawable.repo_readonly;
 
         return R.drawable.repo;
+    }
+
+    public boolean canLocalDecrypt() {
+        return encrypted
+                && encVersion == 2
+                && !TextUtils.isEmpty(magic)
+                && SettingsManager.instance().isEncryptEnabled();
     }
 
     public boolean hasWritePermission() {

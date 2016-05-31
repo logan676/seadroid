@@ -12,7 +12,9 @@ import com.github.kevinsawicki.http.HttpRequest;
 import com.github.kevinsawicki.http.HttpRequest.HttpRequestException;
 import com.google.common.collect.Maps;
 import com.seafile.seadroid2.account.Account;
+import com.seafile.seadroid2.data.Block;
 import com.seafile.seadroid2.data.DataManager;
+import com.seafile.seadroid2.data.FileBlocks;
 import com.seafile.seadroid2.data.ProgressMonitor;
 import com.seafile.seadroid2.ssl.SSLTrustManager;
 import com.seafile.seadroid2.util.Utils;
@@ -29,6 +31,7 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URLEncoder;
+import java.util.List;
 import java.util.Map;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -449,6 +452,86 @@ public class SeafConnection {
         }
     }
 
+    public String getBlockDownloadList(String repoID, String path) throws SeafException, IOException {
+        try {
+            String apiPath = String.format("api2/repos/%s/file/", repoID);
+            Map<String, Object> params = Maps.newHashMap();
+            params.put("p", encodeUriComponent(path));
+            params.put("op", "downloadblks");
+            HttpRequest req = prepareApiGetRequest(apiPath, params);
+            checkRequestResponseStatus(req, HttpURLConnection.HTTP_OK);
+
+            String result = new String(req.bytes(), "UTF-8");
+            return result;
+        } catch (SeafException | IOException e) {
+            throw e;
+        } catch (HttpRequestException e) {
+            throw getSeafExceptionFromHttpRequestException(e);
+        }
+    }
+
+    /**
+     * get file server link for downloading a block
+     *
+     * @param repoID
+     * @param fileId
+     * @param blockId
+     * @return
+     * @throws SeafException
+     * @throws IOException
+     */
+    private String getBlockDownloadLink(String repoID, String fileId, String blockId) throws SeafException, IOException {
+        try {
+            String apiPath = String.format("api2/repos/%s/files/%s/blks/%s/download-link/", repoID, fileId, blockId);
+            HttpRequest req = prepareApiGetRequest(apiPath, null);
+            checkRequestResponseStatus(req, HttpURLConnection.HTTP_OK);
+
+            return new String(req.bytes(), "UTF-8");
+        } catch (SeafException | IOException e) {
+            throw e;
+        } catch (HttpRequestException e) {
+            throw getSeafExceptionFromHttpRequestException(e);
+        }
+    }
+
+    /**
+     * Get the latest version of the file from server
+     * @param repoID
+     * @param fileBlocks
+     * @param blockId
+     * @param localPath
+     * @param monitor
+     * @return A two tuple of (fileID, file). If the local cached version is up to date, the returned file is null.
+     */
+    public Pair<String, File> getBlock(String repoID,
+                                       FileBlocks fileBlocks,
+                                       String blockId,
+                                       String localPath,
+                                       ProgressMonitor monitor) throws SeafException, IOException, JSONException {
+
+        String dlink = getBlockDownloadLink(repoID, fileBlocks.fileID, blockId).replaceAll("\"", "");
+
+        File block = getBlockFromLink(dlink, fileBlocks, blockId, localPath, monitor);
+        if (block != null) {
+            return new Pair<>(blockId, block);
+        } else {
+            throw SeafException.unknownException;
+        }
+    }
+
+    public String uploadByBlocks(String repoID, String dir, String filePath, List<Block> blocks, boolean update, ProgressMonitor monitor) throws IOException, SeafException {
+        try {
+            String url = getUploadLink(repoID, update, true);
+            Log.d(DEBUG_TAG, "UploadLink " + url);
+            return uploadBlocksCommon(url, repoID, dir, filePath, blocks, monitor, update);
+        } catch (SeafException e) {
+            // do again
+            String url = getUploadLink(repoID, update, true);
+            Log.d(DEBUG_TAG, "do again UploadLink " + url);
+            return uploadBlocksCommon(url, repoID, dir, filePath, blocks, monitor, update);
+        }
+    }
+
     private File getFileFromLink(String dlink, String path, String localPath,
                                  String oid, ProgressMonitor monitor)
                                     throws SeafException {
@@ -472,8 +555,8 @@ public class SeafConnection {
                 Long size = Long.parseLong(req.header(HttpRequest.HEADER_CONTENT_LENGTH));*/
                 if (req.contentLength() > 0) {
                     Long size =  Long.valueOf(req.contentLength());
-                    monitor.onProgressNotify(size);
-                };
+                    monitor.onProgressNotify(size, false);
+                }
             }
 
             File tmp = DataManager.createTempFile();
@@ -490,6 +573,55 @@ public class SeafConnection {
                 return null;
             }
             return file;
+
+        } catch (SeafException e) {
+            throw e;
+        } catch (UnsupportedEncodingException e) {
+            throw SeafException.encodingException;
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw SeafException.networkException;
+        } catch (HttpRequestException e) {
+            if (e.getCause() instanceof MonitorCancelledException) {
+                // Log.d(DEBUG_TAG, "download is cancelled");
+                throw SeafException.userCancelledException;
+            } else {
+                throw getSeafExceptionFromHttpRequestException(e);
+            }
+        }
+    }
+
+    private File getBlockFromLink(String dlink, FileBlocks fileBlocks, String blkId, String localPath, ProgressMonitor monitor)
+                                    throws SeafException {
+        if (dlink == null)
+            return null;
+
+        try {
+
+            HttpRequest req = prepareApiFileGetRequest(dlink);
+            checkRequestResponseStatus(req, HttpURLConnection.HTTP_OK);
+
+            if (monitor != null) {
+                /*if (req.header(HttpRequest.HEADER_CONTENT_LENGTH) == null) {
+                    throw SeafException.illFormatException;
+                }
+                Long size = Long.parseLong(req.header(HttpRequest.HEADER_CONTENT_LENGTH));*/
+                if (req.contentLength() > 0) {
+                    fileBlocks.getBlock(blkId).size = req.contentLength();
+                    monitor.onProgressNotify(fileBlocks.getSize(), true);
+                }
+            }
+
+            File block = new File(localPath);
+            // Log.d(DEBUG_TAG, "write to " + block.getAbsolutePath());
+            if (monitor == null) {
+                req.receive(block);
+            } else {
+                req.bufferSize(DataManager.BUFFER_SIZE);
+                req.receive(new MonitoredFileOutputStream(fileBlocks, blkId, block, monitor));
+            }
+
+            return block;
 
         } catch (SeafException e) {
             throw e;
@@ -562,12 +694,26 @@ public class SeafConnection {
     }
 
     private String getUploadLink(String repoID, boolean update) throws SeafException {
+        return getUploadLink(repoID, update, false);
+    }
+
+    private String getUploadLink(String repoID, boolean update, boolean byblock) throws SeafException {
         try {
             String apiPath;
             if (update) {
-                apiPath = "api2/repos/" + repoID + "/update-link/";
+                if (byblock) {
+                    apiPath = "api2/repos/" + repoID + "/upload-";
+                } else {
+                    apiPath = "api2/repos/" + repoID + "/update-";
+                }
             } else {
-                apiPath = "api2/repos/" + repoID + "/upload-link/";
+                apiPath = "api2/repos/" + repoID + "/upload-";
+            }
+
+            if (byblock) {
+                apiPath = apiPath + "blks-link/";
+            } else {
+                apiPath = apiPath + "link/";
             }
 
             HttpRequest req = prepareApiGetRequest(apiPath);
@@ -581,6 +727,7 @@ public class SeafConnection {
             } else
                 throw SeafException.unknownException;
         } catch (SeafException e) {
+            Log.d(DEBUG_TAG, e.getCode() + e.getMessage());
             throw e;
         } catch (Exception e) {
             String msg = e.getMessage();
@@ -593,32 +740,25 @@ public class SeafConnection {
     }
 
     /**
-     * Upload a file to update an existing file
+     * Upload or update a file
+     *
+     * @param repoID
+     * @param dir
+     * @param filePath
+     * @param monitor
+     * @param update
+     * @return
+     * @throws SeafException
      */
-    public String updateFile(String repoID, String dir, String filePath, ProgressMonitor monitor)
-                                throws SeafException {
-        try {
-            String url = getUploadLink(repoID, true);
-            return uploadFileCommon(url, repoID, dir, filePath, monitor, true);
-        } catch (SeafException e) {
-            // do again
-            String url = getUploadLink(repoID, true);
-            return uploadFileCommon(url, repoID, dir, filePath, monitor, true);
-        }
-    }
-
-    /**
-     * Upload a new file
-     */
-    public String uploadFile(String repoID, String dir, String filePath, ProgressMonitor monitor)
+    public String uploadFile(String repoID, String dir, String filePath, ProgressMonitor monitor, boolean update)
                             throws SeafException {
         try {
-            String url = getUploadLink(repoID, false);
-            return uploadFileCommon(url, repoID, dir, filePath, monitor, false);
+            String url = getUploadLink(repoID, update);
+            return uploadFileCommon(url, repoID, dir, filePath, monitor, update);
         } catch (SeafException e) {
             // do again
-            String url = getUploadLink(repoID, false);
-            return uploadFileCommon(url, repoID, dir, filePath, monitor, false);
+            String url = getUploadLink(repoID, update);
+            return uploadFileCommon(url, repoID, dir, filePath, monitor, update);
         }
     }
 
@@ -726,6 +866,162 @@ public class SeafConnection {
             checkRequestResponseStatus(req, HttpURLConnection.HTTP_OK);
 
             return new String(req.bytes(), "UTF-8");
+        } catch (IOException e) {
+            throw SeafException.networkException;
+        } catch (HttpRequestException e) {
+            if (e.getCause() instanceof MonitorCancelledException) {
+                Log.d(DEBUG_TAG, "upload is cancelled");
+                throw SeafException.userCancelledException;
+            } else {
+                throw getSeafExceptionFromHttpRequestException(e);
+            }
+        }
+    }
+
+    /**
+     * Upload file blocks to server
+     */
+    private String uploadBlocksCommon(String link, String repoID, String dir,
+                                      String filePath, List<Block> blocks,
+                                      ProgressMonitor monitor, boolean update)
+                                        throws SeafException {
+
+        try {
+            File file = new File(filePath);
+            if (!file.exists()) {
+                throw new SeafException(SeafException.OTHER_EXCEPTION, "File not exists");
+            }
+
+            HttpRequest req = HttpRequest.post(link).followRedirects(true).connectTimeout(CONNECTION_TIMEOUT);
+
+            prepareHttpsCheck(req);
+
+            /**
+             * We have to set the content-length header, otherwise the whole
+             * request would be buffered by android. So we have to format the
+             * multipart form-data request ourselves in order to calculate the
+             * content length.
+             */
+            int totalLen = 0;
+            byte[] dirParam = {};
+            StringBuilder updateBuilder = new StringBuilder();
+            if (update) {
+                // line 1, ------SeafileAndroidBound$_$
+                updateBuilder.append(TWO_HYPENS + BOUNDARY + CRLF);
+                // line 2
+                updateBuilder.append("Content-Disposition: form-data; name=\"replace\"" + CRLF);
+                // line 3
+                updateBuilder.append(CRLF);
+                // line 4
+                updateBuilder.append("1" + CRLF);
+                dirParam = updateBuilder.toString().getBytes("UTF-8");
+                totalLen += dirParam.length;
+            }
+
+            StringBuilder parentDirBuilder = new StringBuilder();
+            // line 1, ------SeafileAndroidBound$_$
+            parentDirBuilder.append(TWO_HYPENS + BOUNDARY + CRLF);
+            // line 2
+            parentDirBuilder.append("Content-Disposition: form-data; name=\"parent_dir\"" + CRLF);
+            // line 3
+            parentDirBuilder.append(CRLF);
+            // line 4
+            parentDirBuilder.append(dir + CRLF);
+            totalLen += parentDirBuilder.toString().getBytes("UTF-8").length;
+
+            StringBuilder fileNameBuilder = new StringBuilder();
+            // line 1, ------SeafileAndroidBound$_$
+            fileNameBuilder.append(TWO_HYPENS + BOUNDARY + CRLF);
+            // line 2
+            fileNameBuilder.append("Content-Disposition: form-data; name=\"file_name\"" + CRLF);
+            // line 3
+            fileNameBuilder.append(CRLF);
+            // line 4
+            fileNameBuilder.append(file.getName() + CRLF);
+            totalLen += fileNameBuilder.toString().getBytes("UTF-8").length;
+
+            StringBuilder fileSizeBuilder = new StringBuilder();
+            // line 1, ------SeafileAndroidBound$_$
+            fileSizeBuilder.append(TWO_HYPENS + BOUNDARY + CRLF);
+            // line 2
+            fileSizeBuilder.append("Content-Disposition: form-data; name=\"file_size\"" + CRLF);
+            // line 3
+            fileSizeBuilder.append(CRLF);
+            // line 4
+            fileSizeBuilder.append(file.length() + CRLF);
+            totalLen += fileSizeBuilder.toString().getBytes("UTF-8").length;
+
+            for (Block block : blocks) {
+                // line 1
+                String l1 = TWO_HYPENS + BOUNDARY + CRLF;
+
+                File blk = new File(block.path);
+
+                // line 2
+                String contentDisposition = "Content-Disposition: form-data; name=\"file\";filename=\"" + blk.getName() + "\"" + CRLF;
+                byte[] l2 = contentDisposition.getBytes("UTF-8");
+
+                // line 3
+                String l3 = "Content-Type: text/plain" + CRLF;
+
+                // line 4
+                String l4 = CRLF;
+                totalLen += l1.length() + l2.length + l3.length() + l4.length() + blk.length() + 2;
+            }
+
+            String end = TWO_HYPENS + BOUNDARY + TWO_HYPENS + CRLF;
+            totalLen += end.getBytes().length;
+
+            req.contentLength(totalLen);
+            req.header("Connection", "Keep-Alive");
+            req.header("Cache-Control", "no-cache");
+            req.header("Content-Type", "multipart/form-data;boundary=" + BOUNDARY);
+
+            if (update) {
+                req.send(updateBuilder);
+                Log.d(DEBUG_TAG, updateBuilder.toString());
+            }
+
+            req.send(parentDirBuilder);
+            req.send(fileNameBuilder);
+            req.send(fileSizeBuilder);
+
+            for (Block block : blocks) {
+                // line 1
+                String l1 = TWO_HYPENS + BOUNDARY + CRLF;
+
+                File blk = new File(block.path);
+
+                // line 2
+                String contentDisposition = "Content-Disposition: form-data; name=\"file\";filename=\"" + blk.getName() + "\"" + CRLF;
+                byte[] l2 = contentDisposition.getBytes("UTF-8");
+
+                // line 3
+                String l3 = "Content-Type: text/plain" + CRLF;
+
+                // line 4
+                String l4 = CRLF;
+                totalLen += l1.length() + l2.length + l3.length() + l4.length() + blk.length() + 2;
+
+                StringBuilder chunkReq = new StringBuilder();
+                chunkReq.append(l1).append(contentDisposition).append(l3).append(l4);
+                req.send(chunkReq);
+
+                if (monitor != null) {
+                    req.bufferSize(MonitoredFileInputStream.BUFFER_SIZE);
+                    req.send(new MonitoredFileInputStream(blk, monitor));
+                } else {
+                    req.send(new FileInputStream(blk));
+                }
+                req.send(CRLF);
+            }
+
+            req.send(end);
+
+            checkRequestResponseStatus(req, HttpURLConnection.HTTP_OK);
+
+            //result file_id "3f0da9a0709c5fb9f23957608dabef01becc3a8c"
+            return new String(req.bytes(), "UTF-8").replaceAll("\"","");
         } catch (IOException e) {
             throw SeafException.networkException;
         } catch (HttpRequestException e) {
@@ -870,7 +1166,7 @@ public class SeafConnection {
             }
 
             if (System.currentTimeMillis() > nextUpdate) {
-                monitor.onProgressNotify(bytesRead);
+                monitor.onProgressNotify(bytesRead, false);
                 nextUpdate = System.currentTimeMillis() + PROGRESS_UPDATE_INTERVAL;
             }
         }
@@ -888,9 +1184,21 @@ public class SeafConnection {
         private long bytesWritten = 0;
         private long nextUpdate = System.currentTimeMillis() + PROGRESS_UPDATE_INTERVAL;
 
+        private FileBlocks fileBlocks;
+        private String blockId;
+
         public MonitoredFileOutputStream(File file, ProgressMonitor monitor) throws IOException {
             this.dst = new FileOutputStream(file);
             this.monitor = monitor;
+        }
+
+        public MonitoredFileOutputStream(FileBlocks fileBlocks, String blockId, File file, ProgressMonitor monitor) throws IOException {
+            this.dst = new FileOutputStream(file);
+            this.monitor = monitor;
+            if (fileBlocks != null) {
+                this.fileBlocks = fileBlocks;
+                this.blockId = blockId;
+            }
         }
 
         @Override
@@ -928,7 +1236,12 @@ public class SeafConnection {
             }
 
             if (System.currentTimeMillis() > nextUpdate) {
-                monitor.onProgressNotify(bytesWritten);
+                if (fileBlocks != null) {
+                    fileBlocks.getBlock(blockId).finished = bytesWritten;
+                    monitor.onProgressNotify(fileBlocks.getFinished(), false);
+                } else {
+                    monitor.onProgressNotify(bytesWritten, false);
+                }
                 nextUpdate = System.currentTimeMillis() + PROGRESS_UPDATE_INTERVAL;
             }
         }

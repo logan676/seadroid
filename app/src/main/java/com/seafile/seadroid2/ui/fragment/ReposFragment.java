@@ -10,6 +10,7 @@ import android.support.v4.app.ListFragment;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.view.ActionMode;
 import android.util.Log;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -43,6 +44,7 @@ import com.seafile.seadroid2.ui.ToastUtils;
 import com.seafile.seadroid2.ui.activity.AccountsActivity;
 import com.seafile.seadroid2.ui.activity.BrowserActivity;
 import com.seafile.seadroid2.ui.adapter.SeafItemAdapter;
+import com.seafile.seadroid2.ui.dialog.PasswordDialog;
 import com.seafile.seadroid2.ui.dialog.SslConfirmDialog;
 import com.seafile.seadroid2.ui.dialog.TaskDialog;
 import com.seafile.seadroid2.util.ConcurrentAsyncTask;
@@ -432,6 +434,8 @@ public class ReposFragment extends ListFragment {
 
             @Override
             public void run() {
+                if (mActivity == null) return;
+
                 TransferService ts = mActivity.getTransferService();
                 String repoID = getNavContext().getRepoID();
                 String repoName = getNavContext().getRepoName();
@@ -575,18 +579,14 @@ public class ReposFragment extends ListFragment {
             return;
         }
 
-        if (repo.encrypted && !DataManager.getRepoPasswordSet(repo.id)) {
-            String password = DataManager.getRepoPassword(repo.id);
-            mActivity.showPasswordDialog(repo.name, repo.id,
-                    new TaskDialog.TaskDialogListener() {
-                @Override
-                public void onTaskSuccess() {
-                    onListItemClick(l, v, position, id);
-                }
-            }, password);
+        final boolean continueProcess = handleEncryptedRepo(repo, new TaskDialog.TaskDialogListener() {
+            @Override
+            public void onTaskSuccess() {
+                onListItemClick(l, v, position, id);
+            }
+        });
 
-            return;
-        }
+        if (!continueProcess) return;
 
         mRefreshType = REFRESH_ON_CLICK;
         if (nav.inRepo()) {
@@ -609,6 +609,30 @@ public class ReposFragment extends ListFragment {
             nav.setRepoName(repo.getName());
             nav.setDir("/", repo.root);
             refreshView();
+        }
+    }
+
+    private boolean handleEncryptedRepo(SeafRepo repo, TaskDialog.TaskDialogListener taskDialogListener) {
+        if (!repo.encrypted) return true;
+
+        if (!repo.canLocalDecrypt()) {
+            if (!DataManager.getRepoPasswordSet(repo.id)) {
+                String password = DataManager.getRepoPassword(repo.id);
+                mActivity.showPasswordDialog(repo.name, repo.id, taskDialogListener, password);
+                return false;
+            } else {
+                taskDialogListener.onTaskSuccess();
+                return true;
+            }
+        } else {
+            if (!mActivity.getDataManager().getRepoEnckeySet(repo.id)) {
+                Pair<String, String> pair = mActivity.getDataManager().getRepoEncKey(repo.id);
+                mActivity.showEncDialog(repo.name, repo.id,repo.magic, repo.encKey, repo.encVersion, taskDialogListener, pair == null ? null : pair.first);
+                return false;
+            } else {
+                taskDialogListener.onTaskSuccess();
+                return true;
+            }
         }
     }
 

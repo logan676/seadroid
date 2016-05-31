@@ -1,5 +1,6 @@
 package com.seafile.seadroid2.data;
 
+import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
 
@@ -11,16 +12,25 @@ import com.seafile.seadroid2.SeafConnection;
 import com.seafile.seadroid2.SeafException;
 import com.seafile.seadroid2.account.Account;
 import com.seafile.seadroid2.account.AccountInfo;
+import com.seafile.seadroid2.crypto.Crypto;
 import com.seafile.seadroid2.util.Utils;
 
+import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -42,7 +52,9 @@ public class DataManager {
     private static Map<String, Long> direntsRefreshTimeMap = Maps.newHashMap();
     public static final long REFRESH_EXPIRATION_MSECS = 10 * 60 * 1000; // 10 mins
     public static long repoRefreshTimeStamp = 0;
-    
+
+    public static final int BUFFER_SIZE = 2 * 1024 * 1024;
+
     private SeafConnection sc;
     private Account account;
     private DatabaseHelper dbHelper;
@@ -152,6 +164,11 @@ public class DataManager {
     private File getFileForDirentCache(String dirID) {
         String filename = "dirent-" + dirID + ".dat";
         return new File(storageManager.getJsonCacheDir() + "/" + filename);
+    }
+
+    private File getFileForBlockCache(String blockId) {
+        String filename = "block-" + blockId + ".dat";
+        return new File(storageManager.getTempDir() + "/" + filename);
     }
 
     /**
@@ -279,6 +296,12 @@ public class DataManager {
         }
     }
 
+
+    public String getBlockPathById(String blkId) {
+        final File block = getFileForBlockCache(blkId);
+        return block.getAbsolutePath();
+    }
+
     public SeafRepo getCachedRepoByID(String id) {
         List<SeafRepo> cachedRepos = getReposFromCache();
         if (cachedRepos == null) {
@@ -387,6 +410,52 @@ public class DataManager {
             File file = ret.second;
             addCachedFile(repoName, repoID, path, fileID, file);
             return file;
+        }
+    }
+
+    public synchronized File getFileByBlocks(String repoName, String repoID, String path, int version,
+                        ProgressMonitor monitor) throws SeafException, IOException, JSONException, NoSuchAlgorithmException {
+
+        String cachedFileID = null;
+        SeafCachedFile cf = getCachedFile(repoName, repoID, path);
+        File localFile = getLocalRepoFile(repoName, repoID, path);
+        // If local file is up to date, show it
+        if (cf != null) {
+            if (localFile.exists()) {
+                cachedFileID = cf.fileID;
+            }
+        }
+
+        final String json = sc.getBlockDownloadList(repoID, path);
+        JSONObject obj = new JSONObject(json);
+        FileBlocks fileBlocks = FileBlocks.fromJson(obj);
+
+        final Pair<String, String> pair = getRepoEncKey(repoID);
+        final String encKey = pair.first;
+        final String encIv = pair.second;
+        if (TextUtils.isEmpty(encKey) || TextUtils.isEmpty(encIv)) {
+            throw SeafException.decryptException;
+        }
+
+        if (fileBlocks.blocks == null)
+            throw SeafException.blockListNullPointerException;
+
+        for (Block blk : fileBlocks.blocks) {
+            File tempBlock = new File(storageManager.getTempDir(), blk.blockId);
+            final Pair<String, File> block = sc.getBlock(repoID, fileBlocks, blk.blockId, tempBlock.getPath(), monitor);
+            final byte[] bytes = FileUtils.readFileToByteArray(block.second);
+            final byte[] decryptedBlock = Crypto.decrypt(bytes, encKey, encIv);
+            FileUtils.writeByteArrayToFile(localFile, decryptedBlock, true);
+        }
+
+        if (fileBlocks.fileID.equals(cachedFileID)) {
+            // cache is valid
+            Log.d(DEBUG_TAG, "cache is valid");
+            return localFile;
+        } else {
+            Log.d(DEBUG_TAG, String.format("addCachedFile repoName %s, repoId %s, path %s, fileId %s", repoName, repoID, path, fileBlocks.fileID));
+            addCachedFile(repoName, repoID, path, fileBlocks.fileID, localFile);
+            return localFile;
         }
     }
 
@@ -545,24 +614,14 @@ public class DataManager {
     }
 
     public void uploadFile(String repoName, String repoID, String dir, String filePath,
-            ProgressMonitor monitor, boolean isCopyToLocal) throws SeafException {
-        uploadFileCommon(repoName, repoID, dir, filePath, monitor, false, isCopyToLocal);
-    }
-
-    public void updateFile(String repoName, String repoID, String dir, String filePath,
-            ProgressMonitor monitor, boolean isCopyToLocal) throws SeafException {
-        uploadFileCommon(repoName, repoID, dir, filePath, monitor, true, isCopyToLocal);
+            ProgressMonitor monitor, boolean isUpdate, boolean isCopyToLocal) throws SeafException {
+        uploadFileCommon(repoName, repoID, dir, filePath, monitor, isUpdate, isCopyToLocal);
     }
 
     private void uploadFileCommon(String repoName, String repoID, String dir,
                                   String filePath, ProgressMonitor monitor,
                                   boolean isUpdate, boolean isCopyToLocal) throws SeafException {
-        String newFileID = null;
-        if (isUpdate) {
-            newFileID  = sc.updateFile(repoID, dir, filePath, monitor);
-        } else {
-            newFileID  = sc.uploadFile(repoID, dir, filePath, monitor);
-        }
+        String newFileID = sc.uploadFile(repoID, dir, filePath, monitor,isUpdate);
 
         if (newFileID == null || newFileID.length() == 0) {
             return;
@@ -768,6 +827,10 @@ public class DataManager {
         }
     }
 
+    public static void clearPassword() {
+        passwords.clear();
+    }
+
     private static class PasswordInfo {
         String password;
         long timestamp;
@@ -802,6 +865,29 @@ public class DataManager {
         }
 
         return info.password;
+    }
+
+    public boolean getRepoEnckeySet(String repoID) {
+        Pair<String, String> info = dbHelper.getEnckey(repoID);
+        return info != null
+                && !TextUtils.isEmpty(info.first)
+                && !TextUtils.isEmpty(info.second);
+    }
+
+    public void saveRepoSecretKey(String repoID, String key, String iv) {
+        if (!TextUtils.isEmpty(repoID)
+                && !TextUtils.isEmpty(key)
+                && !TextUtils.isEmpty(iv)) {
+            dbHelper.saveEncKey(key, iv, repoID);
+        }
+    }
+
+    public Pair<String, String> getRepoEncKey(String repoID) {
+        if (repoID == null) {
+            return null;
+        }
+
+        return dbHelper.getEnckey(repoID);
     }
 
     /**
@@ -928,5 +1014,95 @@ public class DataManager {
         } catch (JSONException e) {
             return null;
         }
+    }
+
+    private FileBlocks chunkFile(String encKey, String enkIv, String filePath) throws IOException {
+        File file = new File(filePath);
+        InputStream in = null;
+        DataInputStream dis;
+        OutputStream out = null;
+        byte[] buffer = new byte[BUFFER_SIZE];
+        FileBlocks seafBlock = new FileBlocks();
+        try {
+            in = new FileInputStream(file);
+            dis = new DataInputStream(in);
+
+            // Log.d(DEBUG_TAG, "file size " + file.length());
+            while (dis.read(buffer, 0, BUFFER_SIZE) != -1) {
+                final byte[] cipher = Crypto.encrypt(buffer, encKey, enkIv);
+                final String blkid = Crypto.sha1(cipher);
+                File blk = new File(storageManager.getTempDir(), blkid);
+                Block block = new Block(blkid, blk.getAbsolutePath(), blk.length(), 0L);
+                seafBlock.blocks.add(block);
+                out = new FileOutputStream(blk);
+                out.write(cipher);
+                out.close();
+            }
+
+            in.close();
+
+            return seafBlock;
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return null;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            if (out != null) out.close();
+            if (in != null) in.close();
+        }
+    }
+
+    public void uploadByBlocks(String repoName, String repoId, String dir,
+                               String filePath, ProgressMonitor monitor,
+                               boolean isUpdate, boolean isCopyToLocal, int version) throws NoSuchAlgorithmException, IOException, SeafException {
+        uploadByBlocksCommon(repoName, repoId, dir, filePath, monitor, isUpdate, isCopyToLocal, version);
+    }
+
+    private void uploadByBlocksCommon(String repoName, String repoID, String dir, String filePath,
+                                      ProgressMonitor monitor, boolean isUpdate, boolean isCopyToLocal, int version) throws NoSuchAlgorithmException, IOException, SeafException {
+
+
+        final Pair<String, String> pair = getRepoEncKey(repoID);
+        final String encKey = pair.first;
+        final String encIv = pair.second;
+        // Log.d(DEBUG_TAG, "encKey " + encKey + " encIv " + encIv);
+        if (TextUtils.isEmpty(encKey) || TextUtils.isEmpty(encIv)) {
+            // TODO calculate them and continue
+            throw SeafException.encryptException;
+        }
+
+        final FileBlocks chunkFile = chunkFile(encKey, encIv, filePath);
+        if (chunkFile.blocks.isEmpty()) {
+            throw SeafException.blockListNullPointerException;
+        }
+
+        String newFileID = sc.uploadByBlocks(repoID, dir, filePath, chunkFile.blocks, isUpdate, monitor);
+        // Log.d(DEBUG_TAG, "uploadByBlocks " + newFileID);
+
+        if (newFileID == null || newFileID.length() == 0) {
+            return;
+        }
+
+        File srcFile = new File(filePath);
+        String path = Utils.pathJoin(dir, srcFile.getName());
+        File fileInRepo = getLocalRepoFile(repoName, repoID, path);
+
+        if (isCopyToLocal) {
+            if (!isUpdate) {
+                // Copy the uploaded file to local repo cache
+                try {
+                    Utils.copyFile(srcFile, fileInRepo);
+                } catch (IOException e) {
+                    return;
+                }
+            }
+        }
+        // Update file cache entry
+        addCachedFile(repoName, repoID, path, newFileID, fileInRepo);
     }
 }
