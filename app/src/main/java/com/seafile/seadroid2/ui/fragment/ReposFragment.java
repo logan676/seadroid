@@ -6,9 +6,11 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Parcelable;
 import android.support.v4.app.ListFragment;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.view.ActionMode;
+import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
 import android.view.LayoutInflater;
@@ -24,6 +26,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.cocosw.bottomsheet.BottomSheet;
+import com.google.common.collect.Maps;
 import com.seafile.seadroid2.R;
 import com.seafile.seadroid2.SeafConnection;
 import com.seafile.seadroid2.SeafException;
@@ -73,6 +76,7 @@ public class ReposFragment extends ListFragment {
     private BrowserActivity mActivity = null;
     private ActionMode mActionMode;
     private CopyMoveContext copyMoveContext;
+    private Map<String, Parcelable> scrollPostions;
 
     public static final int FILE_ACTION_EXPORT = 0;
     public static final int FILE_ACTION_COPY = 1;
@@ -285,6 +289,7 @@ public class ReposFragment extends ListFragment {
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         Log.d(DEBUG_TAG, "ReposFragment onActivityCreated");
+        scrollPostions = Maps.newHashMap();
         adapter = new SeafItemAdapter(mActivity);
 
         mListView.setAdapter(adapter);
@@ -326,14 +331,18 @@ public class ReposFragment extends ListFragment {
     
     public void refresh() {
         mRefreshType = REFRESH_ON_OVERFLOW_MENU;
-        refreshView(true);
+        refreshView(true, false);
     }
 
     public void refreshView() {
-        refreshView(false);
+        refreshView(false, false);
     }
 
-    public void refreshView(boolean forceRefresh) {
+    public void refreshView(boolean restorePosition) {
+        refreshView(false, restorePosition);
+    }
+
+    public void refreshView(boolean forceRefresh, boolean restorePosition) {
         if (mActivity == null)
             return;
 
@@ -345,15 +354,15 @@ public class ReposFragment extends ListFragment {
             if (mActivity.getCurrentPosition() == BrowserActivity.INDEX_LIBRARY_TAB) {
                 mActivity.enableUpButton();
             }
-            navToDirectory(forceRefresh);
+            navToDirectory(forceRefresh, restorePosition);
         } else {
             mActivity.disableUpButton();
-            navToReposView(forceRefresh);
+            navToReposView(forceRefresh, restorePosition);
         }
         mActivity.supportInvalidateOptionsMenu();
     }
 
-    public void navToReposView(boolean forceRefresh) {
+    public void navToReposView(boolean forceRefresh, boolean restorePosition) {
         //stopTimer();
 
         mPullToRefreshStopRefreshing ++;
@@ -372,7 +381,7 @@ public class ReposFragment extends ListFragment {
                     mPullToRefreshStopRefreshing = 0;
                 }
 
-                updateAdapterWithRepos(repos);
+                updateAdapterWithRepos(repos, restorePosition);
                 return;
             }
         }
@@ -380,7 +389,7 @@ public class ReposFragment extends ListFragment {
         ConcurrentAsyncTask.execute(new LoadTask(getDataManager()));
     }
 
-    public void navToDirectory(boolean forceRefresh) {
+    public void navToDirectory(boolean forceRefresh, boolean restorePosition) {
         startTimer();
 
         mPullToRefreshStopRefreshing ++;
@@ -414,7 +423,7 @@ public class ReposFragment extends ListFragment {
                     mPullToRefreshStopRefreshing = 0;
                 }
 
-                updateAdapterWithDirents(dirents);
+                updateAdapterWithDirents(dirents, restorePosition);
                 return;
             }
         }
@@ -491,7 +500,7 @@ public class ReposFragment extends ListFragment {
         SettingsManager.instance().saveSortFilesPref(type, order);
     }
 
-    private void updateAdapterWithRepos(List<SeafRepo> repos) {
+    private void updateAdapterWithRepos(List<SeafRepo> repos, boolean restorPosition) {
         adapter.clear();
         if (repos.size() > 0) {
             addReposToAdapter(repos);
@@ -499,6 +508,7 @@ public class ReposFragment extends ListFragment {
                     SettingsManager.instance().getSortFilesOrderPref());
             adapter.notifyChanged();
             mListView.setVisibility(View.VISIBLE);
+            restoreRepoScrollPosition(restorPosition);
             mEmptyView.setVisibility(View.GONE);
         } else {
             mListView.setVisibility(View.GONE);
@@ -508,7 +518,7 @@ public class ReposFragment extends ListFragment {
         //mListView.collapse();
     }
 
-    private void updateAdapterWithDirents(final List<SeafDirent> dirents) {
+    private void updateAdapterWithDirents(final List<SeafDirent> dirents, boolean restorPosition) {
         adapter.clear();
         if (dirents.size() > 0) {
             for (SeafDirent dirent : dirents) {
@@ -523,6 +533,7 @@ public class ReposFragment extends ListFragment {
                     SettingsManager.instance().getSortFilesOrderPref());
             adapter.notifyChanged();
             mListView.setVisibility(View.VISIBLE);
+            restoreDirentScrollPosition(restorPosition, repoName, dirPath);
             mEmptyView.setVisibility(View.GONE);
         } else {
             // Directory is empty
@@ -599,6 +610,7 @@ public class ReposFragment extends ListFragment {
                     String newPath = currentPath.endsWith("/") ?
                             currentPath + dirent.name : currentPath + "/" + dirent.name;
                     nav.setDir(newPath, dirent.id);
+                    saveDirentScrollPosition(repo.getName(), currentPath);
                     refreshView();
                     mActivity.setUpButtonTitle(dirent.name);
                 } else {
@@ -610,7 +622,61 @@ public class ReposFragment extends ListFragment {
             nav.setRepoID(repo.id);
             nav.setRepoName(repo.getName());
             nav.setDir("/", repo.root);
+            saveRepoScrollPosition(repo.getName());
             refreshView();
+        }
+    }
+
+    private void saveDirentScrollPosition(String repoName, String currentPath) {
+        final String pathJoin = Utils.pathJoin(repoName, currentPath);
+        Parcelable state = mListView.onSaveInstanceState();
+        scrollPostions.put(pathJoin, state);
+        //Log.d(DEBUG_TAG, "save path " + pathJoin);
+    }
+
+    private void saveRepoScrollPosition(String repoName) {
+        Parcelable state = mListView.onSaveInstanceState();
+        final String pathJoin = Utils.pathJoin(repoName, "/");
+        scrollPostions.put(pathJoin, state);
+        Log.d(DEBUG_TAG, "save repo path " + pathJoin);
+    }
+
+    private void restoreDirentScrollPosition(boolean restorPosition, String repoName, String dirPath) {
+        final String pathJoin = Utils.pathJoin(repoName, dirPath);
+        if (restorPosition) {
+            //Log.d(DEBUG_TAG, "restore path" + pathJoin);
+            // Restore previous state (including selected item index and scroll position)
+            Parcelable state = scrollPostions.get(pathJoin);
+            //Log.d(DEBUG_TAG, "path " + parentPath);
+            if(state != null) {
+                mListView.onRestoreInstanceState(state);
+            } else {
+                mListView.setSelectionAfterHeaderView();
+            }
+        } else {
+            mListView.setSelectionAfterHeaderView();
+        }
+    }
+
+    private void restoreRepoScrollPosition(boolean restorPosition) {
+        final String repoName = getNavContext().getRepoName();
+        final String dirPath = getNavContext().getDirPath();
+        if (TextUtils.isEmpty(repoName) || TextUtils.isEmpty(dirPath))
+            return;
+
+        final String pathJoin = Utils.pathJoin(repoName, dirPath);
+        if (restorPosition) {
+            Log.d(DEBUG_TAG, "restore repo path" + pathJoin);
+            // Restore previous state (including selected item index and scroll position)
+            Parcelable state = scrollPostions.get(pathJoin);
+            //Log.d(DEBUG_TAG, "path " + parentPath);
+            if(state != null) {
+                mListView.onRestoreInstanceState(state);
+            } else {
+                mListView.setSelectionAfterHeaderView();
+            }
+        } else {
+            mListView.setSelectionAfterHeaderView();
         }
     }
 
@@ -781,7 +847,7 @@ public class ReposFragment extends ListFragment {
 
             if (rs != null) {
                 getDataManager().setReposRefreshTimeStamp();
-                updateAdapterWithRepos(rs);
+                updateAdapterWithRepos(rs, false);
             } else {
                 Log.i(DEBUG_TAG, "failed to load repos");
                 showError(R.string.error_when_load_repos);
@@ -964,7 +1030,7 @@ public class ReposFragment extends ListFragment {
                 return;
             }
             getDataManager().setDirsRefreshTimeStamp(myRepoID, myPath);
-            updateAdapterWithDirents(dirents);
+            updateAdapterWithDirents(dirents, false);
         }
     }
 
