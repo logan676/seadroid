@@ -2,6 +2,7 @@ package com.seafile.seadroid2.ui.dialog;
 
 import android.app.Dialog;
 import android.os.Bundle;
+import android.support.v4.widget.NestedScrollView;
 import android.support.v7.widget.SwitchCompat;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -45,6 +46,7 @@ public class NewRepoDialog extends TaskDialog {
     private SwitchCompat mEncryptSwitch;
     private EditText mPasswordText;
     private EditText mPasswordConfirmationText;
+    private NestedScrollView mNestedScrollView;
 
     private Account mAccount;
     private DataManager mDataManager;
@@ -73,6 +75,7 @@ public class NewRepoDialog extends TaskDialog {
         mEncryptSwitch = (SwitchCompat) view.findViewById(R.id.new_repo_encrypt_switch);
         mPasswordText = (EditText) view.findViewById(R.id.new_repo_password);
         mPasswordConfirmationText = (EditText) view.findViewById(R.id.new_repo_password_confirmation);
+        mNestedScrollView = (NestedScrollView) view.findViewById(R.id.nsv_new_repo_container);
 
         if (savedInstanceState != null) {
             // Restore state
@@ -83,11 +86,9 @@ public class NewRepoDialog extends TaskDialog {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
-                    mPasswordText.setVisibility(View.VISIBLE);
-                    mPasswordConfirmationText.setVisibility(View.VISIBLE);
+                    mNestedScrollView.setVisibility(View.VISIBLE);
                 } else {
-                    mPasswordText.setVisibility(View.GONE);
-                    mPasswordConfirmationText.setVisibility(View.GONE);
+                    mNestedScrollView.setVisibility(View.GONE);
 
                     // Delete entered passwords so hiding the input fields creates an unencrypted repo
                     mPasswordText.setText("");
@@ -120,6 +121,10 @@ public class NewRepoDialog extends TaskDialog {
         if (mEncryptSwitch.isChecked()) {
             if (getPassword().length() == 0) {
                 throw new Exception(getResources().getString(R.string.err_passwd_empty));
+            }
+
+            if (getPassword().length() < 8) {
+                throw new Exception(getResources().getString(R.string.err_passwd_too_short));
             }
 
             if (!getPassword().equals(getPasswordConfirmation())) {
