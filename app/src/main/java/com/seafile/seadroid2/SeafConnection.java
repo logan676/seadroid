@@ -17,6 +17,7 @@ import com.seafile.seadroid2.data.Block;
 import com.seafile.seadroid2.data.DataManager;
 import com.seafile.seadroid2.data.FileBlocks;
 import com.seafile.seadroid2.data.ProgressMonitor;
+import com.seafile.seadroid2.ssl.AuthenticationParameters;
 import com.seafile.seadroid2.ssl.SSLTrustManager;
 import com.seafile.seadroid2.util.Utils;
 
@@ -36,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 
 /**
@@ -50,9 +52,14 @@ public class SeafConnection {
     private static final int READ_TIMEOUT = 30000;
 
     private Account account;
+    private AuthenticationParameters authParams;
 
     public SeafConnection(Account act) {
         account = act;
+    }
+    public SeafConnection(Account act, AuthenticationParameters authenticationParameters) {
+        account = act;
+        authParams = authenticationParameters;
     }
 
     public Account getAccount() {
@@ -89,7 +96,7 @@ public class SeafConnection {
             // This is handled by SSLTrustManager and CertsManager
             req.trustAllHosts();
             HttpsURLConnection sconn = (HttpsURLConnection)conn;
-            sconn.setSSLSocketFactory(SSLTrustManager.instance().getSSLSocketFactory(account));
+            sconn.setSSLSocketFactory(SSLTrustManager.instance().getSSLSocketFactory(account, authParams));
         }
 
         return req;

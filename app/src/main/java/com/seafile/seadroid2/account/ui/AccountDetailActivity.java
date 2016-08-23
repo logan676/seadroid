@@ -3,10 +3,12 @@ package com.seafile.seadroid2.account.ui;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.AssetManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.NavUtils;
 import android.support.v4.app.TaskStackBuilder;
@@ -34,7 +36,9 @@ import com.seafile.seadroid2.account.Account;
 import com.seafile.seadroid2.account.AccountInfo;
 import com.seafile.seadroid2.account.Authenticator;
 import com.seafile.seadroid2.data.DataManager;
+import com.seafile.seadroid2.ssl.AuthenticationParameters;
 import com.seafile.seadroid2.ssl.CertsManager;
+import com.seafile.seadroid2.ssl.IOUtil;
 import com.seafile.seadroid2.ui.EmailAutoCompleteTextView;
 import com.seafile.seadroid2.ui.activity.AccountsActivity;
 import com.seafile.seadroid2.ui.activity.BaseActivity;
@@ -44,6 +48,8 @@ import com.seafile.seadroid2.util.Utils;
 
 import org.json.JSONException;
 
+import java.io.File;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 
@@ -69,6 +75,10 @@ public class AccountDetailActivity extends BaseActivity implements Toolbar.OnMen
     private android.accounts.AccountManager mAccountManager;
     private boolean serverTextHasFocus;
     private boolean isPasswddVisible;
+
+    private String clientCertificateName;
+    private String caCertificateName;
+    private String clientCertificatePassword;
 
     /** Called when the activity is first created. */
     @Override
@@ -135,7 +145,18 @@ public class AccountDetailActivity extends BaseActivity implements Toolbar.OnMen
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setTitle(R.string.login);
 
+        initData();
         initListener();
+    }
+
+    private void initData(){
+        caCertificateName = getString(R.string.server_cert_asset_name);
+        clientCertificateName = getString(R.string.client_cert_file_name);
+        clientCertificatePassword = getString(R.string.client_cert_password);
+
+        serverText.setText("dev3.seafile.com");
+        emailText.setText("test@seafile.com");
+        passwdText.setText("o80frdmz");
     }
 
     private void initListener() {
@@ -358,9 +379,9 @@ public class AccountDetailActivity extends BaseActivity implements Toolbar.OnMen
 
     /** Called when the user clicks the Login button */
     public void login(View view) {
-        String serverURL = serverText.getText().toString().trim();
-        String email = emailText.getText().toString().trim();
-        String passwd = passwdText.getText().toString();
+        String serverURL = "https://dev3.seafile.com";/*serverText.getText().toString().trim();*/
+        String email = "test@seafile.com";/*emailText.getText().toString().trim();*/
+        String passwd = "o80frdmz";//passwdText.getText().toString();
 
         ConnectivityManager connMgr = (ConnectivityManager)
             getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -497,13 +518,32 @@ public class AccountDetailActivity extends BaseActivity implements Toolbar.OnMen
             loginButton.setEnabled(true);
         }
 
+        private File getClientCertFile() {
+            File externalStorageDir = Environment.getExternalStorageDirectory();
+            //Log.d(DEBUG_TAG, "externalStorageDir " + externalStorageDir);
+            return new File(externalStorageDir, clientCertificateName);
+        }
+
+        private String readCaCert() throws Exception {
+            AssetManager assetManager = getAssets();
+            InputStream inputStream = assetManager.open(caCertificateName);
+            return IOUtil.readFully(inputStream);
+        }
+
         private String doLogin() {
-            SeafConnection sc = new SeafConnection(loginAccount);
+            AuthenticationParameters authParams = new AuthenticationParameters();
+            final File certFile = getClientCertFile();
+            Log.d(DEBUG_TAG, "cert path " + certFile.getAbsolutePath());
+            authParams.setClientCertificate(certFile);
+            authParams.setClientCertificatePassword(clientCertificatePassword);
+            SeafConnection sc = new SeafConnection(loginAccount, authParams);
 
             try {
                 // if successful, this will place the auth token into "loginAccount"
-                if (!sc.doLogin(passwd, authToken))
+                if (!sc.doLogin(passwd, authToken)) {
+                    Log.d(DEBUG_TAG, "login failed");
                     return getString(R.string.err_login_failed);
+                }
 
                 // fetch email address from the server
                 DataManager manager = new DataManager(loginAccount);

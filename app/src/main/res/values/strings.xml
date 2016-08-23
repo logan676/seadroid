@@ -526,4 +526,8 @@
     <string name="op_exception_folder_deleted">The folder \"%s\" was deleted</string>
     <string name="op_exception_suitable_app_not_found">Could not find suitable app for mime type %s</string>
     <string name="op_exception_failed_to_download_file">Failed to download file %s</string>
+
+    <string name="server_cert_asset_name">master-cacert.pem</string>
+    <string name="client_cert_file_name">client.p12</string>
+    <string name="client_cert_password">password</string>
 </resources>
