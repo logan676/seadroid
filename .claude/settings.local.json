@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./fix_critical_issues.sh:*)",
+      "Bash(./fix_kotlin_syntax_v2.sh:*)",
+      "Bash(./fix_final_syntax.sh:*)",
+      "Bash(chmod:*)",
+      "Bash(./fix_remaining_issues.sh:*)",
+      "Bash(./fix_final_issues.sh:*)",
+      "Bash(./fix_last_issues.sh:*)",
+      "Bash(./fix_all_remaining.sh:*)",
+      "Bash(tee:*)",
+      "Bash(/Users/HONGBGU/Documents/seadroid/fix_kotlin_errors.sh:*)",
+      "Bash(/Users/HONGBGU/Documents/seadroid/fix_all_remaining.sh:*)",
+      "Bash(for file in )",
+      "Bash(\"/Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/dialog_fragment/viewmodel/GetShareLinkPasswordViewModel.kt\" )",
+      "Bash(\"/Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/folder_backup/FolderBackupConfigActivity.kt\" )",
+      "Bash(\"/Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/selector/folder_selector/FileListAdapter.kt\")",
+      "Bash(do)",
+      "Bash(tail:*)",
+      "Bash(done)",
+      "Bash(git -C /Users/HONGBGU/Documents/seadroid checkout -- app/src/main/java/com/seafile/seadroid2/account/Account.kt app/src/main/java/com/seafile/seadroid2/account/SupportAccountManager.kt app/src/main/java/com/seafile/seadroid2/baseviewmodel/BaseViewModel.kt)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

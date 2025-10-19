@@ -1,0 +1,236 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.10.2/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :app
+WARNING: The option setting 'android.defaults.buildfeatures.buildconfig=true' is deprecated.
+The current default is 'false'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+To keep using this feature, add the following to your module-level build.gradle files:
+    android.buildFeatures.buildConfig = true
+or from Android Studio, click: `Refactor` > `Migrate BuildConfig to Gradle Build Files`.
+Release signing skipped: app/key.properties not found.
+WARNING: API 'variant.getAssemble()' is obsolete and has been replaced with 'variant.getAssembleProvider()'.
+It will be removed in version 9.0 of the Android Gradle plugin.
+For more information, see https://d.android.com/r/tools/task-configuration-avoidance.
+To determine what is calling variant.getAssemble(), use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
+
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:dataBindingMergeDependencyArtifactsDebug UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:injectCrashlyticsMappingFileIdDebug UP-TO-DATE
+> Task :app:processDebugGoogleServices UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:dataBindingGenBaseClassesDebug UP-TO-DATE
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:mergeDebugShaders UP-TO-DATE
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets UP-TO-DATE
+> Task :app:compressDebugAssets UP-TO-DATE
+> Task :app:desugarDebugFileDependencies UP-TO-DATE
+> Task :app:checkDebugDuplicateClasses UP-TO-DATE
+> Task :app:mergeExtDexDebug UP-TO-DATE
+> Task :app:mergeLibDexDebug UP-TO-DATE
+> Task :app:mergeDebugJniLibFolders UP-TO-DATE
+> Task :app:mergeDebugNativeLibs NO-SOURCE
+> Task :app:stripDebugDebugSymbols NO-SOURCE
+> Task :app:validateSigningDebug UP-TO-DATE
+> Task :app:writeDebugAppMetadata UP-TO-DATE
+> Task :app:writeDebugSigningConfigVersions UP-TO-DATE
+
+> Task :app:kaptGenerateStubsDebugKotlin
+w: Kapt currently doesn't support language version 2.0+. Falling back to 1.9.
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2156:73 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2157:17 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2157:36 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2157:38 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2157:39 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2157:52 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2157:54 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2157:55 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2157:60 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2158:17 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2158:36 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2158:38 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2158:39 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2158:49 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2158:51 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2159:17 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2159:36 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2159:38 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2159:39 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2159:53 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2159:55 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2159:71 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2159:72 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2160:17 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2160:36 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2160:38 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2160:39 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2160:47 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2160:49 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2161:17 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2161:29 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2161:30 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2161:31 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2161:33 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2161:34 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2161:45 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2161:46 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2161:51 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2162:15 Unexpected tokens (use ';' to separate expressions on the same line)
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2230:81 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2231:25 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2231:44 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2231:46 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2231:47 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2231:60 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2231:62 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2231:63 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2231:75 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2232:25 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2232:44 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2232:46 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2232:47 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2232:57 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2232:59 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2233:25 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2233:44 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2233:46 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2233:47 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2233:56 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2233:58 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2234:25 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2234:44 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2234:46 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2234:47 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2234:53 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2234:55 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2235:25 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2235:37 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2235:38 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2235:39 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2235:41 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2235:42 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2235:53 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2235:54 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2235:63 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2245:23 Unexpected tokens (use ';' to separate expressions on the same line)
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2249:14 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2266:6 Expecting ','
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2391:6 Expecting ','
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2403:6 Expecting ','
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2412:43 Expecting a class body
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2412:89 Expecting an element
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2412:90 Unexpected tokens (use ';' to separate expressions on the same line)
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2413:10 Expecting ','
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:2425:10 Expecting ')'
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:3685:14 Unexpected tokens (use ';' to separate expressions on the same line)
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:3696:2 Expecting ')'
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:3696:2 Expecting '}'
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/RepoQuickFragment.kt:3696:2 Missing '}
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:84:59 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:84:68 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:85:9 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:85:14 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:85:16 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:85:17 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:85:40 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:85:41 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:85:59 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:85:61 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:87:9 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:87:14 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:87:16 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:87:17 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:87:31 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:87:32 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:87:43 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:94:9 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:94:10 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:94:11 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:94:19 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:94:21 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:94:28 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:94:29 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:96:9 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:96:16 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:96:17 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:96:24 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:96:25 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:96:37 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:96:39 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:96:40 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:97:9 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:97:19 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:97:20 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:97:38 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:97:39 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:97:51 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:99:9 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:99:12 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:99:13 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:99:23 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:99:25 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:99:26 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:99:28 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:104:9 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:104:24 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:104:25 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:104:37 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:104:39 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/repo/sheetaction/BottomSheetActionViewPager.kt:264:2 Missing '}
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/star/StarredAdapter.kt:93:86 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/star/StarredAdapter.kt:93:88 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/star/StarredAdapter.kt:129:10 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/star/StarredAdapter.kt:131:9 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/star/StarredAdapter.kt:131:15 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/star/StarredAdapter.kt:131:17 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/star/StarredAdapter.kt:132:9 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/star/StarredAdapter.kt:132:19 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/star/StarredAdapter.kt:132:20 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/star/StarredAdapter.kt:132:37 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/star/StarredAdapter.kt:132:38 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/star/StarredAdapter.kt:132:42 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/star/StarredAdapter.kt:133:6 Expecting ')'
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/star/StarredAdapter.kt:134:1 Expecting a class body
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/ui/star/StarredAdapter.kt:134:2 Missing '}
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/view/ExoPlayerView.kt:27:98 Expecting member declaration
+e: file:///Users/HONGBGU/Documents/seadroid/app/src/main/java/com/seafile/seadroid2/view/ExoPlayerView.kt:241:2 Missing '}
+
+> Task :app:kaptGenerateStubsDebugKotlin FAILED
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:kaptGenerateStubsDebugKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.10.2/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 16s
+29 actionable tasks: 1 executed, 28 up-to-date
